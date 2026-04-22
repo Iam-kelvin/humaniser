@@ -1,0 +1,189 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PlanCode {
+  FREE
+  PRO
+}
+
+enum SubscriptionProvider {
+  PADDLE
+  LEMON_SQUEEZY
+}
+
+enum SubscriptionStatus {
+  INCOMPLETE
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  PAUSED
+}
+
+enum WritingPreset {
+  EMAIL
+  RESEARCH_SUMMARY
+  GENERAL_WRITING
+}
+
+enum Tone {
+  NATURAL
+  PROFESSIONAL
+  WARM
+  CONFIDENT
+  CONCISE
+}
+
+enum RewriteIntensity {
+  LIGHT
+  MODERATE
+  STRONG
+}
+
+enum SourceType {
+  PASTED_TEXT
+  DOCUMENT_UPLOAD
+}
+
+enum UsageEventType {
+  REWRITE_CREATED
+  REWRITE_REGENERATED
+  PLAN_UPGRADE_STARTED
+  PLAN_PORTAL_OPENED
+}
+
+enum WebhookStatus {
+  RECEIVED
+  PROCESSED
+  FAILED
+  IGNORED
+}
+
+model User {
+  id           String           @id @default(cuid())
+  clerkUserId  String           @unique
+  email        String           @unique
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  profile      Profile?
+  subscription Subscription?
+  usageEvents  UsageEvent[]
+  documents    Document[]
+  rewrites     Rewrite[]
+  customers    PaymentCustomer[]
+}
+
+model Profile {
+  id                String           @id @default(cuid())
+  userId            String           @unique
+  displayName       String?
+  defaultPreset     WritingPreset    @default(EMAIL)
+  defaultTone       Tone             @default(NATURAL)
+  defaultIntensity  RewriteIntensity @default(MODERATE)
+  defaultLanguage   String           @default("English")
+  customInstructions String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Subscription {
+  id                     String               @id @default(cuid())
+  userId                 String               @unique
+  provider               SubscriptionProvider
+  providerCustomerId     String?
+  providerSubscriptionId String?              @unique
+  planCode               PlanCode             @default(FREE)
+  status                 SubscriptionStatus   @default(INCOMPLETE)
+  currentPeriodStart     DateTime?
+  currentPeriodEnd       DateTime?
+  cancelAtPeriodEnd      Boolean              @default(false)
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+  user                   User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([provider, providerCustomerId])
+}
+
+model UsageEvent {
+  id         String         @id @default(cuid())
+  userId     String
+  eventType  UsageEventType
+  inputWords Int
+  outputWords Int
+  planAtTime PlanCode
+  createdAt  DateTime       @default(now())
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model Document {
+  id            String         @id @default(cuid())
+  userId        String
+  title         String
+  sourceText    String         @db.Text
+  sourceType    SourceType     @default(PASTED_TEXT)
+  writingPreset WritingPreset
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rewrites      Rewrite[]
+
+  @@index([userId, updatedAt])
+}
+
+model Rewrite {
+  id                   String           @id @default(cuid())
+  documentId           String
+  userId               String
+  tone                 Tone
+  intensity            RewriteIntensity
+  instructionsSnapshot String?          @db.Text
+  rewrittenText        String           @db.Text
+  changeSummary        String?          @db.Text
+  modelName            String?
+  tokensUsed           Int?
+  latencyMs            Int?
+  createdAt            DateTime         @default(now())
+  document             Document         @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user                 User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([documentId, createdAt])
+}
+
+model PaymentCustomer {
+  id                 String               @id @default(cuid())
+  userId             String
+  provider           SubscriptionProvider
+  providerCustomerId String
+  email              String
+  country            String?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  user               User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerCustomerId])
+  @@index([userId, provider])
+}
+
+model WebhookEvent {
+  id          String               @id @default(cuid())
+  provider    SubscriptionProvider
+  eventId     String
+  eventType   String
+  payloadJson Json
+  processedAt DateTime?
+  status      WebhookStatus        @default(RECEIVED)
+  createdAt   DateTime             @default(now())
+
+  @@unique([provider, eventId])
+  @@index([provider, status, createdAt])
+}

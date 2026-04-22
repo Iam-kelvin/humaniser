@@ -1,36 +1,102 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Humaniser
 
-## Getting Started
+Humaniser is a SaaS writing refinement app for rewriting AI-assisted emails and research summaries into natural, audience-aware writing without changing the intended meaning.
 
-First, run the development server:
+## Stack
+
+- Next.js 16 App Router
+- TypeScript
+- Tailwind CSS v4
+- Clerk authentication
+- PostgreSQL + Prisma ORM
+- Paddle-first billing abstraction
+- Server Actions for settings and rewrite mutations
+
+## Setup
+
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Copy the environment file and fill in your credentials:
+
+```bash
+cp .env.example .env.local
+```
+
+Required values:
+
+- `DATABASE_URL`
+- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
+- `CLERK_SECRET_KEY`
+- `NEXT_PUBLIC_APP_URL`
+
+Optional values for billing scaffolding:
+
+- `PADDLE_API_KEY`
+- `PADDLE_WEBHOOK_SECRET`
+- `PADDLE_PRO_PRICE_ID`
+- `PADDLE_DEFAULT_CHECKOUT_URL`
+
+3. Generate Prisma Client:
+
+```bash
+npm run prisma:generate
+```
+
+4. Create and apply your first migration:
+
+```bash
+npm run prisma:migrate -- --name init
+```
+
+5. Seed demo content if you want a local account preloaded with history:
+
+```bash
+npm run prisma:seed
+```
+
+To seed a real demo user, set:
+
+- `DEMO_USER_CLERK_ID`
+- `DEMO_USER_EMAIL`
+
+6. Start the app:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Project Notes
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Marketing routes live under `src/app/(marketing)`.
+- Auth routes live under `src/app/(auth)`.
+- Product routes live under `src/app/(app)`.
+- `proxy.ts` wires Clerk request handling for App Router server auth helpers.
+- The rewrite engine is provider-neutral and currently uses a deterministic mock provider selected through `HUMANISER_REWRITE_PROVIDER`.
+- Billing is abstracted behind a Paddle-first adapter with checkout, portal, and webhook integration points.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Local Development
 
-## Learn More
+- Use Clerk development keys for `sign-in`, `sign-up`, and `UserButton`.
+- The app syncs a local `User` and `Profile` record the first time an authenticated request hits the server.
+- Free plan limits are enforced at both the UI and action layer.
+- Pro-only features include all tones, all intensities, custom instructions, explain changes, full history access, and billing portal access.
 
-To learn more about Next.js, take a look at the following resources:
+## Verification Commands
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run lint
+npm run typecheck
+npm run build
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Phase 2 TODO
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Document upload
+- Browser extension
+- Team workspace
+- Brand voice profiles
+- Lemon Squeezy support
