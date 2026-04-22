@@ -29,9 +29,16 @@ cp .env.example .env.local
 Required values:
 
 - `DATABASE_URL`
+- `DATABASE_URL_UNPOOLED`
 - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
 - `CLERK_SECRET_KEY`
 - `NEXT_PUBLIC_APP_URL`
+
+Neon setup:
+
+- Put your Neon pooled connection string in `DATABASE_URL`.
+- Put your Neon direct / non-pooled connection string in `DATABASE_URL_UNPOOLED`.
+- Keep only one `DATABASE_URL` entry in your local env file. If it appears twice, the later value wins.
 
 Optional values for billing scaffolding:
 

@@ -2,6 +2,7 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import "server-only";
 
+import { assertDatabaseConfigured } from "@/lib/database";
 import { prisma } from "@/lib/prisma";
 
 export async function getViewer() {
@@ -16,6 +17,8 @@ export async function getViewer() {
   if (!clerkUser?.primaryEmailAddress?.emailAddress) {
     throw new Error("Signed-in user is missing a primary email address.");
   }
+
+  assertDatabaseConfigured();
 
   const user = await prisma.user.upsert({
     where: { clerkUserId: session.userId },
