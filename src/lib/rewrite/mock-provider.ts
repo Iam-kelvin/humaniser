@@ -1,6 +1,6 @@
 import { TONE_LABELS, PRESET_LABELS } from "@/lib/domain";
 import { countWords, sleep } from "@/lib/utils";
-import type { RewriteProvider, RewriteRequestInput } from "@/lib/rewrite/types";
+import type { RewriteProvider, RewriteRequestInput, RewriteResult } from "@/lib/rewrite/types";
 
 function replacePhrase(text: string, original: string, replacement: string) {
   return text.replace(new RegExp(original, "gi"), replacement);
@@ -150,7 +150,7 @@ function reshape(text: string, input: RewriteRequestInput) {
 export class MockRewriteProvider implements RewriteProvider {
   name = "mock";
 
-  async generateRewrite(input: RewriteRequestInput) {
+  async generateRewrite(input: RewriteRequestInput): Promise<RewriteResult> {
     const start = Date.now();
     await sleep(150);
 
@@ -174,6 +174,11 @@ export class MockRewriteProvider implements RewriteProvider {
       modelName: "mock-humaniser-v1",
       tokensUsed: Math.max(140, countWords(input.sourceText) * 4),
       latencyMs: Date.now() - start,
+      metadata: {
+        detectedStructure: "plain",
+        rewrittenParagraphs: 1,
+        preservedElements: [],
+      } satisfies NonNullable<RewriteResult["metadata"]>,
     };
   }
 }

@@ -1,11 +1,19 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { type ChangeEvent, useActionState, useMemo, useState } from "react";
 
 import { createRewriteAction, type RewriteActionState } from "@/server/actions/rewrite";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { StatusBanner } from "@/components/ui/status-banner";
+import {
+  DOCUMENT_UPLOAD_ACCEPT,
+  getDocumentUploadError,
+  isClientPreviewableUpload,
+  normalizeUploadedText,
+} from "@/lib/document-upload";
 import { INTENSITY_LABELS, PRESET_LABELS, TONE_LABELS } from "@/lib/domain";
+import { buildStructuredCompareSections } from "@/lib/rewrite/structured";
 import type { RewriteIntensity, Tone, WritingPreset } from "@/lib/domain";
 
 const initialState: RewriteActionState = {
@@ -24,6 +32,11 @@ type EditorDefaults = {
   changeSummary?: string;
   saveStatus?: string;
   compareSource?: string;
+  rewriteMetadata?: {
+    detectedStructure: "plain" | "multi_paragraph" | "letter";
+    rewrittenParagraphs: number;
+    preservedElements: string[];
+  };
 };
 
 export function RewriteWorkbench({
@@ -43,7 +56,7 @@ export function RewriteWorkbench({
 }) {
   const [state, formAction, pending] = useActionState(createRewriteAction, {
     ...initialState,
-      result: defaults.rewrittenText
+    result: defaults.rewrittenText
       ? {
           rewrittenText: defaults.rewrittenText,
           changeSummary: defaults.changeSummary ?? "",
@@ -54,9 +67,14 @@ export function RewriteWorkbench({
   });
   const [compareMode, setCompareMode] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [draftText, setDraftText] = useState(defaults.sourceText);
+  const [uploadFeedback, setUploadFeedback] = useState("");
+  const [selectedFileName, setSelectedFileName] = useState("");
 
   const displayText = state.result?.rewrittenText ?? defaults.rewrittenText ?? "";
   const sourceText = state.result?.sourceText ?? defaults.compareSource ?? defaults.sourceText;
+  const requiresTypedSource = !selectedFileName;
+  const rewriteMetadata = state.result?.metadata ?? defaults.rewriteMetadata;
 
   const comparePairs = useMemo(() => {
     if (!compareMode) {
@@ -68,6 +86,10 @@ export function RewriteWorkbench({
       { label: "Humanised", value: displayText },
     ];
   }, [compareMode, displayText, sourceText]);
+  const structuredCompareSections = useMemo(
+    () => (compareMode ? buildStructuredCompareSections(sourceText, displayText) : null),
+    [compareMode, displayText, sourceText],
+  );
 
   async function handleCopy() {
     await navigator.clipboard.writeText(displayText);
@@ -75,19 +97,69 @@ export function RewriteWorkbench({
     window.setTimeout(() => setCopied(false), 1200);
   }
 
+  async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    setSelectedFileName(file?.name ?? "");
+
+    if (!file) {
+      setSelectedFileName("");
+      setUploadFeedback("");
+      return;
+    }
+
+    const uploadError = getDocumentUploadError(file);
+
+    if (uploadError) {
+      setUploadFeedback(uploadError);
+      return;
+    }
+
+    if (isClientPreviewableUpload(file)) {
+      const text = normalizeUploadedText(await file.text());
+      setDraftText(text);
+      setUploadFeedback(`${file.name} loaded into the editor.`);
+      return;
+    }
+
+    setDraftText("");
+    setUploadFeedback(`${file.name} is ready. We'll extract its text on submit.`);
+  }
+
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-      <form action={formAction} className="panel space-y-5 p-6">
+      <form action={formAction} encType="multipart/form-data" className="panel space-y-5 p-6">
         <input type="hidden" name="documentId" value={defaults.documentId ?? ""} />
+        <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-slate-900">Document upload</p>
+              <p className="mt-1 text-sm leading-6 text-slate-600">
+                Upload a PDF, DOCX, or text-based file and Humaniser will pull the readable text into the rewrite flow.
+              </p>
+            </div>
+            {selectedFileName ? <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{selectedFileName}</p> : null}
+          </div>
+          <label className="mt-4 flex cursor-pointer flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-8 text-center transition hover:border-[var(--brand)] hover:bg-slate-50">
+            <span className="text-sm font-semibold text-slate-900">Choose a file</span>
+            <span className="mt-2 text-sm leading-6 text-slate-600">Supports .pdf, .docx, .txt, .md, .rtf, .csv, .json, and .html up to 10 MB.</span>
+            <input type="file" name="sourceFile" accept={DOCUMENT_UPLOAD_ACCEPT} className="sr-only" onChange={handleFileChange} />
+          </label>
+          {uploadFeedback ? (
+            <p className="mt-3 text-sm text-slate-600">{uploadFeedback}</p>
+          ) : (
+            <p className="mt-3 text-sm text-slate-500">Prefer pasting? You can still type directly into the editor below.</p>
+          )}
+        </div>
         <div className="space-y-2">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Source text</p>
           <textarea
             name="sourceText"
-            defaultValue={defaults.sourceText}
-            required
+            value={draftText}
+            onChange={(event) => setDraftText(event.target.value)}
+            required={requiresTypedSource}
             rows={18}
             className="w-full rounded-3xl border border-slate-200 bg-white px-4 py-4 text-sm leading-7 text-slate-900 outline-none transition focus:border-[var(--brand)]"
-            placeholder="Paste your email or research summary draft here."
+            placeholder={requiresTypedSource ? "Paste your email or research summary draft here." : "Optional: edit or replace the extracted source text."}
           />
         </div>
         <div className="grid gap-4 md:grid-cols-3">
@@ -165,15 +237,36 @@ export function RewriteWorkbench({
 
         {displayText ? (
           <>
-            <div className="rounded-3xl border border-slate-200 bg-white p-5 text-sm leading-7 text-slate-800">
+            <div className="rounded-3xl border border-slate-200 bg-white p-5 text-sm leading-7 whitespace-pre-wrap text-slate-800">
               {displayText}
             </div>
-            {compareMode && (
+            {compareMode && structuredCompareSections ? (
+              <div className="space-y-4">
+                {structuredCompareSections.map((section) => (
+                  <div key={section.key} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{section.title}</p>
+                      {section.preserved ? <Badge className="border-none bg-white text-teal-700">Preserved</Badge> : null}
+                    </div>
+                    <div className="mt-4 grid gap-4 md:grid-cols-2">
+                      <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Original</p>
+                        <p className="mt-3 text-sm leading-7 whitespace-pre-wrap text-slate-700">{section.sourceText || "No content"}</p>
+                      </div>
+                      <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Humanised</p>
+                        <p className="mt-3 text-sm leading-7 whitespace-pre-wrap text-slate-700">{section.rewrittenText || "No content"}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : compareMode && (
               <div className="grid gap-4 md:grid-cols-2">
                 {comparePairs.map((pair) => (
                   <div key={pair.label} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{pair.label}</p>
-                    <p className="mt-3 text-sm leading-7 text-slate-700">{pair.value}</p>
+                    <p className="mt-3 text-sm leading-7 whitespace-pre-wrap text-slate-700">{pair.value}</p>
                   </div>
                 ))}
               </div>
@@ -190,6 +283,19 @@ export function RewriteWorkbench({
                 tone="warning"
               />
             )}
+            {rewriteMetadata && rewriteMetadata.detectedStructure !== "plain" ? (
+              <div className="rounded-3xl border border-teal-200 bg-teal-50 p-5">
+                <p className="text-sm font-semibold text-teal-950">Formatting preserved</p>
+                <p className="mt-2 text-sm leading-7 text-teal-800">
+                  {rewriteMetadata.detectedStructure === "letter"
+                    ? "Detected a letter-style document and preserved the visible structure while rewriting the body paragraphs."
+                    : "Detected multiple paragraphs and rewrote them separately instead of flattening the whole draft."}
+                </p>
+                <p className="mt-3 text-sm text-teal-800">
+                  Preserved: {rewriteMetadata.preservedElements.join(", ")}. Rewritten paragraphs: {rewriteMetadata.rewrittenParagraphs}.
+                </p>
+              </div>
+            ) : null}
             <p className="text-sm text-slate-500">{state.result?.saveStatus ?? defaults.saveStatus ?? "Ready to save after your first rewrite"}</p>
           </>
         ) : (

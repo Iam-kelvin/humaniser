@@ -23,6 +23,11 @@ export type RewriteResult = {
   modelName: string;
   tokensUsed: number;
   latencyMs: number;
+  metadata?: {
+    detectedStructure: "plain" | "multi_paragraph" | "letter";
+    rewrittenParagraphs: number;
+    preservedElements: string[];
+  };
 };
 
 export interface RewriteProvider {

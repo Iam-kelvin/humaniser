@@ -71,6 +71,9 @@ export default async function HistoryPage({
                   <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">
                     {PRESET_LABELS[rewrite.document.writingPreset]} - {TONE_LABELS[rewrite.tone]} - {INTENSITY_LABELS[rewrite.intensity]}
                   </p>
+                  <p className="mt-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                    {rewrite.document.sourceType === "DOCUMENT_UPLOAD" ? "Uploaded document" : "Pasted text"}
+                  </p>
                 </div>
                 <div className="flex items-center gap-4">
                   <span className="text-sm text-slate-500">{formatDate(rewrite.createdAt)}</span>
@@ -82,11 +85,11 @@ export default async function HistoryPage({
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Original</p>
-                  <p className="mt-3 text-sm leading-7 text-slate-600">{rewrite.document.sourceText}</p>
+                  <p className="mt-3 text-sm leading-7 whitespace-pre-wrap text-slate-600">{rewrite.document.sourceText}</p>
                 </div>
                 <div className="rounded-3xl border border-slate-200 bg-white p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Rewritten</p>
-                  <p className="mt-3 text-sm leading-7 text-slate-700">{rewrite.rewrittenText}</p>
+                  <p className="mt-3 text-sm leading-7 whitespace-pre-wrap text-slate-700">{rewrite.rewrittenText}</p>
                 </div>
               </div>
             </div>

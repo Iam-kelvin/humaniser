@@ -47,6 +47,18 @@ Optional values for billing scaffolding:
 - `PADDLE_PRO_PRICE_ID`
 - `PADDLE_DEFAULT_CHECKOUT_URL`
 
+Optional values for real AI rewrites:
+
+- `OPENAI_API_KEY`
+- `OPENAI_MODEL`
+- `OPENAI_REASONING_EFFORT`
+
+Rewrite provider notes:
+
+- `HUMANISER_REWRITE_PROVIDER="mock"` keeps local development free and uses the built-in mock rewrite flow.
+- `HUMANISER_REWRITE_PROVIDER="openai"` enables real AI rewrites when `OPENAI_API_KEY` is set.
+- If `openai` is selected without an API key, the app falls back to `mock` so local rewrites keep working.
+
 3. Generate Prisma Client:
 
 ```bash
@@ -82,7 +94,7 @@ npm run dev
 - Auth routes live under `src/app/(auth)`.
 - Product routes live under `src/app/(app)`.
 - `proxy.ts` wires Clerk request handling for App Router server auth helpers.
-- The rewrite engine is provider-neutral and currently uses a deterministic mock provider selected through `HUMANISER_REWRITE_PROVIDER`.
+- The rewrite engine is provider-neutral and defaults to the deterministic mock provider selected through `HUMANISER_REWRITE_PROVIDER`.
 - Billing is abstracted behind a Paddle-first adapter with checkout, portal, and webhook integration points.
 
 ## Local Development

@@ -1,10 +1,12 @@
 import "server-only";
 
+import { titleFromUploadName } from "@/lib/document-upload";
 import { prisma } from "@/lib/prisma";
 import { getEntitlements } from "@/lib/plans";
 import { getRewriteProvider } from "@/lib/rewrite";
+import { generateStructuredRewrite } from "@/lib/rewrite/structured";
 import { countWords, titleFromText } from "@/lib/utils";
-import type { PlanCode } from "@/lib/domain";
+import type { PlanCode, SourceType } from "@/lib/domain";
 import type { RewriteInput } from "@/lib/validation";
 
 export type RewriteExecutionResult =
@@ -16,6 +18,11 @@ export type RewriteExecutionResult =
       changeSummary: string;
       modelName: string;
       saveStatus: string;
+      metadata?: {
+        detectedStructure: "plain" | "multi_paragraph" | "letter";
+        rewrittenParagraphs: number;
+        preservedElements: string[];
+      };
     }
   | {
       ok: false;
@@ -50,6 +57,8 @@ export async function executeRewrite(input: {
   planCode: PlanCode;
   existingDocumentId?: string;
   customInstructionsFromProfile?: string | null;
+  sourceType: SourceType;
+  uploadedFileName?: string;
   payload: RewriteInput;
 }): Promise<RewriteExecutionResult> {
   const entitlementError = assertEntitlements(input.planCode, input.payload);
@@ -59,6 +68,27 @@ export async function executeRewrite(input: {
       ok: false,
       error: entitlementError,
       upgradeRequired: true,
+    };
+  }
+
+  const existingDocument = input.existingDocumentId
+    ? await prisma.document.findFirst({
+        where: {
+          id: input.existingDocumentId,
+          userId: input.userId,
+        },
+        select: {
+          id: true,
+          sourceType: true,
+          title: true,
+        },
+      })
+    : null;
+
+  if (input.existingDocumentId && !existingDocument) {
+    return {
+      ok: false,
+      error: "We could not find the document you were trying to update.",
     };
   }
 
@@ -102,37 +132,56 @@ export async function executeRewrite(input: {
     .map((item) => item.trim())
     .filter(Boolean);
 
-  const result = await provider.generateRewrite({
-    sourceText: input.payload.sourceText,
-    options: {
-      preset: input.payload.preset,
-      tone: input.payload.tone,
-      intensity: input.payload.intensity,
-      keepLength: input.payload.keepLength,
-      shorten: input.payload.shorten,
-      expandSlightly: input.payload.expandSlightly,
-      preserveTechnicalTerms: input.payload.preserveTechnicalTerms,
-      preserveKeywords,
-      customInstructions,
-    },
-  });
+  let result;
+
+  try {
+    result = await generateStructuredRewrite(provider, {
+      sourceText: input.payload.sourceText,
+      options: {
+        preset: input.payload.preset,
+        tone: input.payload.tone,
+        intensity: input.payload.intensity,
+        keepLength: input.payload.keepLength,
+        shorten: input.payload.shorten,
+        expandSlightly: input.payload.expandSlightly,
+        preserveTechnicalTerms: input.payload.preserveTechnicalTerms,
+        preserveKeywords,
+        customInstructions,
+      },
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "The rewrite provider failed unexpectedly.";
+
+    return {
+      ok: false,
+      error: message,
+    };
+  }
+
+  const nextTitle =
+    (input.sourceType === "DOCUMENT_UPLOAD" && input.uploadedFileName
+      ? titleFromUploadName(input.uploadedFileName)
+      : null) ??
+    (existingDocument?.sourceType === "DOCUMENT_UPLOAD" ? existingDocument.title : null) ??
+    titleFromText(input.payload.sourceText, "Untitled rewrite");
 
   const document = input.existingDocumentId
     ? await prisma.document.update({
         where: { id: input.existingDocumentId },
         data: {
           sourceText: input.payload.sourceText,
-          title: titleFromText(input.payload.sourceText, "Untitled rewrite"),
+          title: nextTitle,
           writingPreset: input.payload.preset,
+          sourceType: input.sourceType === "DOCUMENT_UPLOAD" ? input.sourceType : undefined,
         },
       })
     : await prisma.document.create({
         data: {
           userId: input.userId,
-          title: titleFromText(input.payload.sourceText, "Untitled rewrite"),
+          title: nextTitle,
           sourceText: input.payload.sourceText,
           writingPreset: input.payload.preset,
-          sourceType: "PASTED_TEXT",
+          sourceType: input.sourceType,
         },
       });
 
@@ -169,5 +218,6 @@ export async function executeRewrite(input: {
     changeSummary: result.changeSummary,
     modelName: result.modelName,
     saveStatus: "Saved to history",
+    metadata: result.metadata,
   };
 }

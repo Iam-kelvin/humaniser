@@ -23,7 +23,7 @@ export default async function NewRewritePage({
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">New rewrite</p>
           <h1 className="text-4xl font-semibold text-slate-950">Refine your draft with audience-aware controls.</h1>
           <p className="max-w-3xl text-sm leading-7 text-slate-600">
-            Paste the source text, choose the tone and intensity you need, and generate a clearer version without changing what you mean.
+            Paste the source text or upload a PDF, DOCX, or text-based document, choose the tone and intensity you need, and generate a clearer version without changing what you mean.
           </p>
         </div>
       </div>
