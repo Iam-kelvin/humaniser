@@ -1,16 +1,18 @@
 import Link from "next/link";
 
+import { ReadinessPanel } from "@/components/dashboard/readiness-panel";
 import { UsageCard } from "@/components/dashboard/usage-card";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PRESET_LABELS, TONE_LABELS, PLAN_LABELS } from "@/lib/domain";
 import { requireViewer } from "@/lib/auth";
 import { getDashboardData } from "@/lib/data/dashboard";
+import { getAppReadiness } from "@/lib/readiness";
 import { formatDate } from "@/lib/utils";
 
 export default async function DashboardPage() {
   const viewer = await requireViewer();
-  const data = await getDashboardData(viewer.user.id);
+  const [data, readiness] = await Promise.all([getDashboardData(viewer.user.id), getAppReadiness()]);
 
   return (
     <>
@@ -25,7 +27,7 @@ export default async function DashboardPage() {
         <ButtonLink href="/dashboard/new">Start a new rewrite</ButtonLink>
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
         <UsageCard
           planCode={data.planCode}
           rewritesUsed={data.usage.rewritesUsed}
@@ -73,6 +75,8 @@ export default async function DashboardPage() {
           </div>
         </div>
       </div>
+
+      <ReadinessPanel readiness={readiness} />
     </>
   );
 }

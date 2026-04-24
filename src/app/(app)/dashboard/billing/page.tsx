@@ -4,13 +4,15 @@ import { StatusBanner } from "@/components/ui/status-banner";
 import { requireViewer } from "@/lib/auth";
 import { getBillingState } from "@/lib/data/billing";
 import { getUsageSummary, resolveCurrentPlan } from "@/lib/data/dashboard";
+import { getAppReadiness } from "@/lib/readiness";
 import { PLAN_LABELS } from "@/lib/domain";
 import { formatDate } from "@/lib/utils";
 
 export default async function BillingPage() {
   const viewer = await requireViewer();
-  const [planCode, billing] = await Promise.all([resolveCurrentPlan(viewer.user.id), getBillingState(viewer.user.id)]);
+  const [planCode, billing, readiness] = await Promise.all([resolveCurrentPlan(viewer.user.id), getBillingState(viewer.user.id), getAppReadiness()]);
   const usage = await getUsageSummary(viewer.user.id, planCode);
+  const billingCheck = readiness.checks.find((check) => check.label === "Billing");
 
   return (
     <section className="space-y-6">
@@ -46,6 +48,9 @@ export default async function BillingPage() {
           )}
         </div>
         <div className="space-y-4">
+          {billingCheck?.status === "attention" ? (
+            <StatusBanner title="Billing still needs production setup" description={billingCheck.detail} tone="warning" />
+          ) : null}
           <StatusBanner
             title="Paddle-first billing architecture"
             description="Checkout, portal handoff, subscription sync, and webhooks are wired through a provider abstraction so Lemon Squeezy can be added later without reshaping the app."
