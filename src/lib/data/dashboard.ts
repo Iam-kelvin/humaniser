@@ -3,7 +3,9 @@ import "server-only";
 
 import { prisma } from "@/lib/prisma";
 import { getEntitlements } from "@/lib/plans";
-import type { PlanCode, Tone, WritingPreset } from "@/lib/domain";
+import type { PlanCode, Tone, UsageEventType, WritingPreset } from "@/lib/domain";
+
+const REWRITE_USAGE_EVENTS: UsageEventType[] = ["REWRITE_CREATED", "REWRITE_REGENERATED"];
 
 export async function resolveCurrentPlan(userId: string): Promise<PlanCode> {
   const subscription = await prisma.subscription.findUnique({
@@ -24,6 +26,7 @@ export async function getUsageSummary(userId: string, planCode: PlanCode) {
   const usage = await prisma.usageEvent.aggregate({
     where: {
       userId,
+      eventType: { in: REWRITE_USAGE_EVENTS },
       createdAt: { gte: monthStart },
     },
     _count: { id: true },
@@ -31,9 +34,9 @@ export async function getUsageSummary(userId: string, planCode: PlanCode) {
   });
 
   const entitlements = getEntitlements(planCode);
-  const rewritesUsed = usage._count.id;
-  const inputWordsUsed = usage._sum.inputWords ?? 0;
-  const outputWordsUsed = usage._sum.outputWords ?? 0;
+  const rewritesUsed = usage._count?.id ?? 0;
+  const inputWordsUsed = usage._sum?.inputWords ?? 0;
+  const outputWordsUsed = usage._sum?.outputWords ?? 0;
 
   return {
     entitlements,

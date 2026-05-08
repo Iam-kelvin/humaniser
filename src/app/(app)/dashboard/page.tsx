@@ -4,15 +4,16 @@ import { ReadinessPanel } from "@/components/dashboard/readiness-panel";
 import { UsageCard } from "@/components/dashboard/usage-card";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { PRESET_LABELS, TONE_LABELS, PLAN_LABELS } from "@/lib/domain";
 import { requireViewer } from "@/lib/auth";
 import { getDashboardData } from "@/lib/data/dashboard";
+import { PLAN_LABELS, PRESET_LABELS, TONE_LABELS } from "@/lib/domain";
 import { getAppReadiness } from "@/lib/readiness";
 import { formatDate } from "@/lib/utils";
 
 export default async function DashboardPage() {
   const viewer = await requireViewer();
   const [data, readiness] = await Promise.all([getDashboardData(viewer.user.id), getAppReadiness()]);
+  const showReadinessChecklist = process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_SHOW_READINESS_CHECKLIST === "true";
 
   return (
     <>
@@ -65,7 +66,7 @@ export default async function DashboardPage() {
                       <span className="text-xs text-slate-500">{formatDate(rewrite.createdAt)}</span>
                     </div>
                     <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
-                      {PRESET_LABELS[rewrite.document.writingPreset]} · {TONE_LABELS[rewrite.tone]}
+                      {[PRESET_LABELS[rewrite.document.writingPreset], TONE_LABELS[rewrite.tone]].join(" · ")}
                     </p>
                     <p className="line-clamp-2 text-sm leading-6 text-slate-600">{rewrite.rewrittenText}</p>
                   </Link>
@@ -76,7 +77,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <ReadinessPanel readiness={readiness} />
+      {showReadinessChecklist ? <ReadinessPanel readiness={readiness} /> : null}
     </>
   );
 }

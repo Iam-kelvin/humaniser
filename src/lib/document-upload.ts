@@ -27,6 +27,47 @@ function getExtension(fileName: string) {
   return segments.length > 1 ? segments.at(-1) ?? "" : "";
 }
 
+function splitCompactHeaderBeforeEmail(text: string) {
+  return text
+    .replace(/([a-z])([A-Z])/g, "$1\n$2")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+function normalizeCompactLetterPreamble(text: string) {
+  const normalized = text.replace(/^\uFEFF/, "").replace(/\r\n/g, "\n").trim();
+  const salutationMatch = normalized.match(/\b(dear\b|hello\b|hi\b|greetings\b|to whom it may concern\b)/i);
+
+  if (!salutationMatch || typeof salutationMatch.index !== "number") {
+    return normalized;
+  }
+
+  const beforeSalutation = normalized.slice(0, salutationMatch.index).trim();
+  const afterSalutation = normalized.slice(salutationMatch.index).trim();
+
+  if (!beforeSalutation || beforeSalutation.includes("\n")) {
+    return normalized;
+  }
+
+  const emailMatch = beforeSalutation.match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i);
+
+  if (!emailMatch || typeof emailMatch.index !== "number") {
+    return normalized;
+  }
+
+  const beforeEmail = splitCompactHeaderBeforeEmail(beforeSalutation.slice(0, emailMatch.index));
+  const emailLine = emailMatch[0].trim();
+  const afterEmail = splitCompactHeaderBeforeEmail(beforeSalutation.slice(emailMatch.index + emailMatch[0].length));
+  const headerLines = [...beforeEmail, emailLine, ...afterEmail].filter(Boolean);
+
+  if (headerLines.length === 0) {
+    return normalized;
+  }
+
+  return `${headerLines.join("\n")}\n\n${afterSalutation}`.trim();
+}
+
 function getSupportedUpload(file: Pick<File, "name" | "type">): SupportedDocumentUpload | null {
   const extension = getExtension(file.name);
   const byExtension = DOCUMENT_UPLOAD_TYPES.find((entry) => entry.extension === extension);
@@ -43,7 +84,7 @@ function getSupportedUpload(file: Pick<File, "name" | "type">): SupportedDocumen
 }
 
 export function normalizeUploadedText(text: string) {
-  return text.replace(/^\uFEFF/, "").replace(/\r\n/g, "\n").trim();
+  return normalizeCompactLetterPreamble(text.replace(/^\uFEFF/, "").replace(/\r\n/g, "\n").trim());
 }
 
 export function getDocumentUploadError(file: Pick<File, "name" | "size" | "type">) {

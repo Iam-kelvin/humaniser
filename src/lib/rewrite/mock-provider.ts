@@ -22,6 +22,85 @@ function sentenceCase(text: string) {
   return text.replace(/(^|[.!?]\s+)([a-z])/g, (_, prefix, char) => `${prefix}${char.toUpperCase()}`);
 }
 
+function cleanupArtifacts(text: string) {
+  return text
+    .replace(/\b(\w+)\s+\1\b/gi, "$1")
+    .replace(/\bI can confidently support\b/gi, "I can support")
+    .replace(/\bI can confidently follow\b/gi, "I can follow")
+    .replace(/\bI work effectively independently\b/gi, "I work independently")
+    .replace(/\bI recognize this role calls for\b/gi, "I understand this role calls for")
+    .replace(/\bI understand this role calls for strong focus, organization, and the ability to maintain accuracy while handling multiple tasks\b/gi, "I understand this role requires focus, organization, and accuracy across multiple tasks")
+    .replace(/\bWith experience across\b/gi, "With experience in")
+    .replace(/\s+,/g, ",")
+    .replace(/\s+\./g, ".")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+function splitSentences(text: string) {
+  return text.split(/(?<=[.!?])\s+/).filter(Boolean);
+}
+
+function mergeShortSentences(text: string) {
+  const sentences = splitSentences(text);
+  const merged: string[] = [];
+
+  for (const sentence of sentences) {
+    if (merged.length > 0 && sentence.split(/\s+/).length <= 7) {
+      merged[merged.length - 1] = `${merged[merged.length - 1]} ${sentence}`.trim();
+      continue;
+    }
+
+    merged.push(sentence);
+  }
+
+  return merged.join(" ");
+}
+
+function applyPresetAdjustments(text: string, input: RewriteRequestInput) {
+  let output = text;
+
+  if (input.options.preset === "EMAIL") {
+    output = output
+      .replace(/\bI am writing to\b/gi, "I'm writing to")
+      .replace(/\bI wanted to let you know\b/gi, "I'm reaching out to share")
+      .replace(/\bPlease let me know if you have any questions\b/gi, "Please let me know if you'd like any clarification");
+  }
+
+  if (input.options.preset === "RESEARCH_SUMMARY") {
+    output = output
+      .replace(/\bI found that\b/gi, "The draft shows that")
+      .replace(/\bthis shows that\b/gi, "This suggests that")
+      .replace(/\bin conclusion\b/gi, "Overall");
+  }
+
+  if (input.options.preset === "GENERAL_WRITING") {
+    output = output
+      .replace(/\bI am excited to apply for\b/gi, "I'm applying for")
+      .replace(/\bI would value the opportunity to\b/gi, "I would welcome the opportunity to");
+  }
+
+  return output;
+}
+
+function applyLengthStrategy(text: string, input: RewriteRequestInput) {
+  let output = text;
+
+  if (input.options.shorten) {
+    const sentences = splitSentences(output).slice(0, 3);
+    return sentences.join(" ");
+  }
+
+  if (input.options.expandSlightly && countWords(output) < countWords(input.sourceText)) {
+    output = output
+      .replace(/\bI can support\b/g, "I can confidently support")
+      .replace(/\bI work well\b/g, "I work effectively")
+      .replace(/\bI understand\b/g, "I recognize");
+  }
+
+  return output;
+}
+
 function humaniseSentence(sentence: string, input: RewriteRequestInput) {
   let output = sentence.trim();
 
@@ -40,7 +119,8 @@ function humaniseSentence(sentence: string, input: RewriteRequestInput) {
   output = replacePhrase(output, "\\bclarify details when needed\\b", "clarify details when needed");
 
   if (input.options.tone === "PROFESSIONAL") {
-    output = replacePhrase(output, "\\bi can\\b", "I can confidently");
+    output = replacePhrase(output, "\\bi can support\\b", "I can support");
+    output = replacePhrase(output, "\\bi can follow\\b", "I can follow");
     output = replacePhrase(output, "\\bi'd value the opportunity to\\b", "I would value the opportunity to");
   }
 
@@ -50,7 +130,8 @@ function humaniseSentence(sentence: string, input: RewriteRequestInput) {
   }
 
   if (input.options.tone === "CONFIDENT") {
-    output = replacePhrase(output, "\\bi can\\b", "I can readily");
+    output = replacePhrase(output, "\\bi can support\\b", "I can confidently support");
+    output = replacePhrase(output, "\\bi can follow\\b", "I can confidently follow");
     output = replacePhrase(output, "\\bi work well independently\\b", "I work effectively independently");
   }
 
@@ -60,8 +141,7 @@ function humaniseSentence(sentence: string, input: RewriteRequestInput) {
       .replace(/\bstrong focus, organization, and the ability to maintain accuracy while handling multiple tasks\b/gi, "focus, organization, and accuracy across multiple tasks");
   }
 
-  output = output.replace(/\s{2,}/g, " ").trim();
-  return sentenceCase(output);
+  return sentenceCase(cleanupArtifacts(output));
 }
 
 function ensureVisibleDifference(source: string, rewritten: string, input: RewriteRequestInput) {
@@ -74,15 +154,7 @@ function ensureVisibleDifference(source: string, rewritten: string, input: Rewri
 
   const sentences = normalizedSource.split(/(?<=[.!?])\s+/).filter(Boolean);
   const rebuilt = sentences
-    .map((sentence, index) => {
-      const next = humaniseSentence(sentence, input);
-
-      if (index === 0 && input.options.preset === "EMAIL" && !/^Dear /i.test(next)) {
-        return `I'm writing to share a clearer version of this note. ${next}`;
-      }
-
-      return next;
-    })
+    .map((sentence) => humaniseSentence(sentence, input))
     .join(" ");
 
   return rebuilt.replace(/\s{2,}/g, " ").trim();
@@ -98,23 +170,19 @@ function reshape(text: string, input: RewriteRequestInput) {
   output = replacePhrase(output, "meaningful value", "clear value");
   output = replacePhrase(output, "let you know that", "share that");
 
-  output = output
-    .split(/(?<=[.!?])\s+/)
+  output = splitSentences(output)
     .map((sentence) => humaniseSentence(sentence, input))
     .filter(Boolean)
     .join(" ");
 
-  if (input.options.tone === "WARM" && !/^Thanks for sharing this draft\./.test(output)) {
-    output = `Thanks for sharing this draft. ${output}`;
-  }
+  output = applyPresetAdjustments(output, input);
 
   if (input.options.tone !== "PROFESSIONAL") {
     output = toContractions(output);
   }
 
   if (input.options.intensity === "STRONG") {
-    output = output
-      .split(/(?<=[.!?])\s+/)
+    output = splitSentences(output)
       .map((sentence) =>
         sentence
           .replace(/\bI am\b/gi, "I'm")
@@ -128,12 +196,7 @@ function reshape(text: string, input: RewriteRequestInput) {
     output = output.replace(/\bI am\b/gi, "I'm");
   }
 
-  if (input.options.shorten) {
-    const sentences = output.split(/(?<=[.!?])\s+/).slice(0, 3);
-    output = sentences.join(" ");
-  } else if (input.options.expandSlightly) {
-    output = `${output} It keeps the original point while making the writing easier to follow.`;
-  }
+  output = applyLengthStrategy(output, input);
 
   if (input.options.keepLength) {
     const sourceCount = countWords(text);
@@ -143,6 +206,8 @@ function reshape(text: string, input: RewriteRequestInput) {
       output = outputWords.slice(0, sourceCount + 5).join(" ");
     }
   }
+
+  output = mergeShortSentences(cleanupArtifacts(output));
 
   return ensureVisibleDifference(text, output.replace(/\s{2,}/g, " ").trim(), input);
 }

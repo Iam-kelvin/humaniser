@@ -49,15 +49,14 @@ Optional values for billing scaffolding:
 
 Optional values for real AI rewrites:
 
-- `OPENAI_API_KEY`
-- `OPENAI_MODEL`
-- `OPENAI_REASONING_EFFORT`
+- `GROQ_API_KEY`
+- `GROQ_MODEL`
 
 Rewrite provider notes:
 
 - `HUMANISER_REWRITE_PROVIDER="mock"` keeps local development free and uses the built-in mock rewrite flow.
-- `HUMANISER_REWRITE_PROVIDER="openai"` enables real AI rewrites when `OPENAI_API_KEY` is set.
-- If `openai` is selected without an API key, the app falls back to `mock` so local rewrites keep working.
+- `HUMANISER_REWRITE_PROVIDER="groq"` enables real AI rewrites when `GROQ_API_KEY` is set.
+- If `groq` is selected without an API key, the app falls back to `mock` so local rewrites keep working.
 
 3. Generate Prisma Client:
 

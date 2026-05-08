@@ -22,7 +22,7 @@ export function getAppReadiness(): AppReadiness {
   const rewriteProvider = env.HUMANISER_REWRITE_PROVIDER ?? "mock";
   const hasClerk = Boolean(env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.trim() && env.CLERK_SECRET_KEY?.trim());
   const hasDatabase = isDatabaseConfigured();
-  const hasOpenAI = rewriteProvider !== "openai" || Boolean(env.OPENAI_API_KEY?.trim());
+  const hasGroq = rewriteProvider !== "groq" || Boolean(env.GROQ_API_KEY?.trim());
   const hasPaddleCore = Boolean(
     env.PADDLE_API_KEY?.trim() &&
       env.PADDLE_WEBHOOK_SECRET?.trim() &&
@@ -43,13 +43,13 @@ export function getAppReadiness(): AppReadiness {
     },
     {
       label: "Rewrite provider",
-      status: hasOpenAI ? "ready" : "attention",
+      status: hasGroq ? "ready" : "attention",
       detail:
         rewriteProvider === "mock"
           ? "Mock rewrites are enabled for free development and internal testing."
-          : hasOpenAI
-            ? "OpenAI provider is selected and has an API key configured."
-            : "OpenAI provider is selected but missing OPENAI_API_KEY, so rewrite quality testing is blocked.",
+          : hasGroq
+            ? "Groq provider is selected and has an API key configured."
+            : "Groq provider is selected but missing GROQ_API_KEY, so rewrite quality testing is blocked.",
     },
     {
       label: "Billing",
@@ -65,12 +65,12 @@ export function getAppReadiness(): AppReadiness {
   return blockers.length <= 1 && hasClerk && hasDatabase
     ? {
         launchStage: "beta_ready",
-        summary: "Core app infrastructure is in place. Focus on real rewrite quality and end-to-end production testing for private beta.",
+        summary: "The app is in good shape for private beta. The main work left is improving rewrite quality and testing the full production flow.",
         checks,
       }
     : {
         launchStage: "internal",
-        summary: "The app is healthy for internal testing, but a few launch blockers still need attention before private beta.",
+        summary: "The app is working for internal testing, but a few items still need attention before private beta.",
         checks,
       };
 }

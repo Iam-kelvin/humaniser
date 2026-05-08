@@ -1,11 +1,12 @@
 "use client";
 
-import { type ChangeEvent, useActionState, useMemo, useState } from "react";
+import { type ChangeEvent, type DragEvent, useActionState, useMemo, useRef, useState } from "react";
 
 import { createRewriteAction, type RewriteActionState } from "@/server/actions/rewrite";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { StatusBanner } from "@/components/ui/status-banner";
+import { downloadDocx } from "@/lib/export-docx";
 import {
   DOCUMENT_UPLOAD_ACCEPT,
   getDocumentUploadError,
@@ -13,7 +14,8 @@ import {
   normalizeUploadedText,
 } from "@/lib/document-upload";
 import { INTENSITY_LABELS, PRESET_LABELS, TONE_LABELS } from "@/lib/domain";
-import { buildStructuredCompareSections } from "@/lib/rewrite/structured";
+import { buildStructuredCompareSections, formatStructuredPlainText, segmentStructuredDocument } from "@/lib/rewrite/structured";
+import { titleFromText } from "@/lib/utils";
 import type { RewriteIntensity, Tone, WritingPreset } from "@/lib/domain";
 
 const initialState: RewriteActionState = {
@@ -23,6 +25,7 @@ const initialState: RewriteActionState = {
 
 type EditorDefaults = {
   documentId?: string;
+  title?: string;
   sourceText: string;
   preset: WritingPreset;
   tone: Tone;
@@ -70,11 +73,27 @@ export function RewriteWorkbench({
   const [draftText, setDraftText] = useState(defaults.sourceText);
   const [uploadFeedback, setUploadFeedback] = useState("");
   const [selectedFileName, setSelectedFileName] = useState("");
+  const [dragActive, setDragActive] = useState(false);
+  const [downloadingDocx, setDownloadingDocx] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const displayText = state.result?.rewrittenText ?? defaults.rewrittenText ?? "";
   const sourceText = state.result?.sourceText ?? defaults.compareSource ?? defaults.sourceText;
   const requiresTypedSource = !selectedFileName;
   const rewriteMetadata = state.result?.metadata ?? defaults.rewriteMetadata;
+  const downloadFileName = useMemo(() => {
+    const uploadedBaseName = selectedFileName.replace(/\.[^.]+$/, "").trim();
+
+    if (uploadedBaseName) {
+      return uploadedBaseName;
+    }
+
+    if (defaults.title?.trim()) {
+      return defaults.title.trim();
+    }
+
+    return titleFromText(sourceText || displayText, "humanised-rewrite");
+  }, [defaults.title, displayText, selectedFileName, sourceText]);
 
   const comparePairs = useMemo(() => {
     if (!compareMode) {
@@ -90,15 +109,29 @@ export function RewriteWorkbench({
     () => (compareMode ? buildStructuredCompareSections(sourceText, displayText) : null),
     [compareMode, displayText, sourceText],
   );
+  const structuredOutput = useMemo(() => {
+    if (!displayText) {
+      return null;
+    }
+
+    const structured = segmentStructuredDocument(displayText);
+    const paragraphCount = structured.sections.filter((section) => section.type === "paragraph").length;
+
+    if (!structured.isLetterLike && paragraphCount <= 1) {
+      return null;
+    }
+
+    return structured;
+  }, [displayText]);
+  const copyReadyText = useMemo(() => formatStructuredPlainText(displayText), [displayText]);
 
   async function handleCopy() {
-    await navigator.clipboard.writeText(displayText);
+    await navigator.clipboard.writeText(copyReadyText);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1200);
   }
 
-  async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
+  async function loadSelectedFile(file: File | null) {
     setSelectedFileName(file?.name ?? "");
 
     if (!file) {
@@ -125,6 +158,53 @@ export function RewriteWorkbench({
     setUploadFeedback(`${file.name} is ready. We'll extract its text on submit.`);
   }
 
+  async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+    await loadSelectedFile(event.target.files?.[0] ?? null);
+  }
+
+  function handleDragOver(event: DragEvent<HTMLLabelElement>) {
+    event.preventDefault();
+    setDragActive(true);
+  }
+
+  function handleDragLeave(event: DragEvent<HTMLLabelElement>) {
+    event.preventDefault();
+    setDragActive(false);
+  }
+
+  async function handleDrop(event: DragEvent<HTMLLabelElement>) {
+    event.preventDefault();
+    setDragActive(false);
+
+    const file = event.dataTransfer.files?.[0] ?? null;
+
+    if (!file) {
+      return;
+    }
+
+    if (fileInputRef.current) {
+      const transfer = new DataTransfer();
+      transfer.items.add(file);
+      fileInputRef.current.files = transfer.files;
+    }
+
+    await loadSelectedFile(file);
+  }
+
+  async function handleDownloadDocx() {
+    if (!displayText) {
+      return;
+    }
+
+    setDownloadingDocx(true);
+
+    try {
+      await downloadDocx(copyReadyText, downloadFileName);
+    } finally {
+      setDownloadingDocx(false);
+    }
+  }
+
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       <form action={formAction} encType="multipart/form-data" className="panel space-y-5 p-6">
@@ -139,10 +219,19 @@ export function RewriteWorkbench({
             </div>
             {selectedFileName ? <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{selectedFileName}</p> : null}
           </div>
-          <label className="mt-4 flex cursor-pointer flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-8 text-center transition hover:border-[var(--brand)] hover:bg-slate-50">
+          <label
+            className={`mt-4 flex cursor-pointer flex-col items-center justify-center rounded-3xl border border-dashed px-6 py-8 text-center transition ${
+              dragActive
+                ? "border-[var(--brand)] bg-teal-50"
+                : "border-slate-300 bg-white hover:border-[var(--brand)] hover:bg-slate-50"
+            }`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
             <span className="text-sm font-semibold text-slate-900">Choose a file</span>
-            <span className="mt-2 text-sm leading-6 text-slate-600">Supports .pdf, .docx, .txt, .md, .rtf, .csv, .json, and .html up to 10 MB.</span>
-            <input type="file" name="sourceFile" accept={DOCUMENT_UPLOAD_ACCEPT} className="sr-only" onChange={handleFileChange} />
+            <span className="mt-2 text-sm leading-6 text-slate-600">Supports .pdf, .docx, .txt, .md, .rtf, .csv, .json, and .html up to 10 MB. You can also drag and drop.</span>
+            <input ref={fileInputRef} type="file" name="sourceFile" accept={DOCUMENT_UPLOAD_ACCEPT} className="sr-only" onChange={handleFileChange} />
           </label>
           {uploadFeedback ? (
             <p className="mt-3 text-sm text-slate-600">{uploadFeedback}</p>
@@ -229,6 +318,9 @@ export function RewriteWorkbench({
             <Button type="button" variant="secondary" onClick={() => setCompareMode((value) => !value)}>
               {compareMode ? "Hide compare" : "Compare mode"}
             </Button>
+            <Button type="button" variant="secondary" onClick={handleDownloadDocx} disabled={!displayText || downloadingDocx}>
+              {downloadingDocx ? "Preparing DOCX..." : "Download DOCX"}
+            </Button>
             <Button type="button" variant="secondary" onClick={handleCopy} disabled={!displayText}>
               {copied ? "Copied" : "Copy"}
             </Button>
@@ -237,8 +329,18 @@ export function RewriteWorkbench({
 
         {displayText ? (
           <>
-            <div className="rounded-3xl border border-slate-200 bg-white p-5 text-sm leading-7 whitespace-pre-wrap text-slate-800">
-              {displayText}
+            <div className="rounded-3xl border border-slate-200 bg-white p-5 text-sm leading-7 text-slate-800">
+              {structuredOutput ? (
+                <div className="space-y-6">
+                  {structuredOutput.sections.map((section, index) => (
+                    <div key={`${section.type}-${index}`} className="whitespace-pre-wrap">
+                      {section.type === "header" || section.type === "closing" ? section.lines.join("\n") : section.text}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="whitespace-pre-wrap">{displayText}</div>
+              )}
             </div>
             {compareMode && structuredCompareSections ? (
               <div className="space-y-4">
@@ -285,15 +387,19 @@ export function RewriteWorkbench({
             )}
             {rewriteMetadata && rewriteMetadata.detectedStructure !== "plain" ? (
               <div className="rounded-3xl border border-teal-200 bg-teal-50 p-5">
-                <p className="text-sm font-semibold text-teal-950">Formatting preserved</p>
+                <p className="text-sm font-semibold text-teal-950">Layout preserved</p>
                 <p className="mt-2 text-sm leading-7 text-teal-800">
                   {rewriteMetadata.detectedStructure === "letter"
-                    ? "Detected a letter-style document and preserved the visible structure while rewriting the body paragraphs."
-                    : "Detected multiple paragraphs and rewrote them separately instead of flattening the whole draft."}
+                    ? "Letter-style formatting was kept intact while the body text was rewritten."
+                    : "Paragraph spacing was kept intact while each paragraph was rewritten separately."}
                 </p>
-                <p className="mt-3 text-sm text-teal-800">
-                  Preserved: {rewriteMetadata.preservedElements.join(", ")}. Rewritten paragraphs: {rewriteMetadata.rewrittenParagraphs}.
-                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {rewriteMetadata.preservedElements.map((element) => (
+                    <Badge key={element} className="border-none bg-white text-teal-800">
+                      {element}
+                    </Badge>
+                  ))}
+                </div>
               </div>
             ) : null}
             <p className="text-sm text-slate-500">{state.result?.saveStatus ?? defaults.saveStatus ?? "Ready to save after your first rewrite"}</p>

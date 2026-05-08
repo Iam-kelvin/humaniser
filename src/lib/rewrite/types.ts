@@ -15,6 +15,13 @@ export type RewriteOptions = {
 export type RewriteRequestInput = {
   sourceText: string;
   options: RewriteOptions;
+  context?: {
+    documentType: "email" | "research_summary" | "cover_letter" | "general_writing";
+    structure: "plain" | "multi_paragraph" | "letter";
+    sectionRole?: "full_document" | "paragraph";
+    paragraphIndex?: number;
+    totalParagraphs?: number;
+  };
 };
 
 export type RewriteResult = {

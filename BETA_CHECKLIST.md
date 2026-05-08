@@ -25,8 +25,8 @@ Use this checklist before inviting private beta users into Humaniser.
 
 ## AI rollout
 
-- Decide whether beta users will use `mock` or `openai`.
-- If using OpenAI, set `OPENAI_API_KEY`, `OPENAI_MODEL`, and `OPENAI_REASONING_EFFORT`.
+- Decide whether beta users will use `mock` or `groq`.
+- If using Groq, set `GROQ_API_KEY` and `GROQ_MODEL`.
 - Measure real rewrite latency and cost on representative documents.
 - Review failure handling when the external rewrite provider is unavailable.
 

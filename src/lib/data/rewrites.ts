@@ -6,8 +6,10 @@ import { getEntitlements } from "@/lib/plans";
 import { getRewriteProvider } from "@/lib/rewrite";
 import { generateStructuredRewrite } from "@/lib/rewrite/structured";
 import { countWords, titleFromText } from "@/lib/utils";
-import type { PlanCode, SourceType } from "@/lib/domain";
+import type { PlanCode, SourceType, UsageEventType } from "@/lib/domain";
 import type { RewriteInput } from "@/lib/validation";
+
+const REWRITE_USAGE_EVENTS: UsageEventType[] = ["REWRITE_CREATED", "REWRITE_REGENERATED"];
 
 export type RewriteExecutionResult =
   | {
@@ -99,6 +101,7 @@ export async function executeRewrite(input: {
   const usage = await prisma.usageEvent.aggregate({
     where: {
       userId: input.userId,
+      eventType: { in: REWRITE_USAGE_EVENTS },
       createdAt: { gte: monthStart },
     },
     _count: { id: true },
@@ -107,9 +110,9 @@ export async function executeRewrite(input: {
 
   const entitlements = getEntitlements(input.planCode);
   const sourceWordCount = countWords(input.payload.sourceText);
-  const projectedWords = (usage._sum.inputWords ?? 0) + sourceWordCount;
+  const projectedWords = (usage._sum?.inputWords ?? 0) + sourceWordCount;
 
-  if (usage._count.id >= entitlements.monthlyRewrites) {
+  if ((usage._count?.id ?? 0) >= entitlements.monthlyRewrites) {
     return {
       ok: false,
       error: "You have reached your monthly rewrite limit.",

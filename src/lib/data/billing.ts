@@ -1,10 +1,12 @@
 import "server-only";
 
+import { getEnv } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
 import { getBillingProvider } from "@/lib/billing";
 import type { PlanCode } from "@/lib/domain";
 
 export async function getBillingState(userId: string) {
+  const env = getEnv();
   const [subscription, customer] = await Promise.all([
     prisma.subscription.findUnique({ where: { userId } }),
     prisma.paymentCustomer.findFirst({ where: { userId, provider: "PADDLE" } }),
@@ -13,6 +15,8 @@ export async function getBillingState(userId: string) {
   return {
     subscription,
     customer,
+    checkoutReady: Boolean(env.PADDLE_API_KEY?.trim() && env.PADDLE_PRO_PRICE_ID?.trim()),
+    portalReady: Boolean(env.PADDLE_API_KEY?.trim() && env.PADDLE_WEBHOOK_SECRET?.trim()),
   };
 }
 

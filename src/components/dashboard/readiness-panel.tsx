@@ -8,7 +8,7 @@ export function ReadinessPanel({ readiness }: { readiness: AppReadiness }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Readiness</p>
-          <h2 className="mt-2 text-2xl font-semibold text-slate-900">Launch posture</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-slate-900">Launch status</h2>
         </div>
         <Badge className={readiness.launchStage === "beta_ready" ? "border-none bg-emerald-50 text-emerald-700" : "border-none bg-amber-50 text-amber-700"}>
           {readiness.launchStage === "beta_ready" ? "Private Beta Ready" : "Internal Testing"}
