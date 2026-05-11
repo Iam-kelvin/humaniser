@@ -35,6 +35,52 @@ function splitCompactHeaderBeforeEmail(text: string) {
     .filter(Boolean);
 }
 
+function expandCompactHeaderLine(line: string) {
+  const normalized = line.trim();
+  const emailMatch = normalized.match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i);
+
+  if (!emailMatch || typeof emailMatch.index !== "number") {
+    return [normalized];
+  }
+
+  const beforeEmail = splitCompactHeaderBeforeEmail(normalized.slice(0, emailMatch.index));
+  const emailLine = emailMatch[0].trim();
+  const afterEmail = splitCompactHeaderBeforeEmail(normalized.slice(emailMatch.index + emailMatch[0].length));
+
+  return [...beforeEmail, emailLine, ...afterEmail].filter(Boolean);
+}
+
+function normalizeLeadingCompactHeaderLines(text: string) {
+  const lines = text.split("\n");
+  const salutationIndex = lines.findIndex((line) => /\b(dear\b|hello\b|hi\b|greetings\b|to whom it may concern\b)/i.test(line.trim()));
+  const headerBoundary = salutationIndex >= 0 ? salutationIndex : Math.min(lines.length, 4);
+
+  const normalizedLines = lines.flatMap((line, index) => {
+    if (index >= headerBoundary || !line.trim()) {
+      return [line];
+    }
+
+    return expandCompactHeaderLine(line);
+  });
+
+  if (salutationIndex < 0) {
+    return normalizedLines.join("\n").trim();
+  }
+
+  const expandedSalutationIndex = normalizedLines.findIndex((line) =>
+    /\b(dear\b|hello\b|hi\b|greetings\b|to whom it may concern\b)/i.test(line.trim()),
+  );
+
+  if (expandedSalutationIndex <= 0) {
+    return normalizedLines.join("\n").trim();
+  }
+
+  const beforeSalutation = normalizedLines.slice(0, expandedSalutationIndex).filter(Boolean);
+  const fromSalutation = normalizedLines.slice(expandedSalutationIndex);
+
+  return [...beforeSalutation, "", ...fromSalutation].join("\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+
 function normalizeCompactLetterPreamble(text: string) {
   const normalized = text.replace(/^\uFEFF/, "").replace(/\r\n/g, "\n").trim();
   const salutationMatch = normalized.match(/\b(dear\b|hello\b|hi\b|greetings\b|to whom it may concern\b)/i);
@@ -84,7 +130,9 @@ function getSupportedUpload(file: Pick<File, "name" | "type">): SupportedDocumen
 }
 
 export function normalizeUploadedText(text: string) {
-  return normalizeCompactLetterPreamble(text.replace(/^\uFEFF/, "").replace(/\r\n/g, "\n").trim());
+  return normalizeLeadingCompactHeaderLines(
+    normalizeCompactLetterPreamble(text.replace(/^\uFEFF/, "").replace(/\r\n/g, "\n").trim()),
+  );
 }
 
 export function getDocumentUploadError(file: Pick<File, "name" | "size" | "type">) {

@@ -19,6 +19,7 @@ export type RewriteActionState = {
     changeSummary: string;
     saveStatus: string;
     sourceText: string;
+    uploadedFileName?: string;
     metadata?: {
       detectedStructure: "plain" | "multi_paragraph" | "letter";
       rewrittenParagraphs: number;
@@ -116,6 +117,7 @@ export async function createRewriteAction(
       changeSummary: result.changeSummary,
       saveStatus: result.saveStatus,
       sourceText: parsed.data.sourceText,
+      uploadedFileName,
       metadata: result.metadata,
     },
   };

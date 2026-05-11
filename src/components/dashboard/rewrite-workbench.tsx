@@ -76,13 +76,15 @@ export function RewriteWorkbench({
   const [dragActive, setDragActive] = useState(false);
   const [downloadingDocx, setDownloadingDocx] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const effectiveUploadedFileName = state.result?.uploadedFileName ?? selectedFileName;
 
   const displayText = state.result?.rewrittenText ?? defaults.rewrittenText ?? "";
   const sourceText = state.result?.sourceText ?? defaults.compareSource ?? defaults.sourceText;
+  const editorText = draftText || (selectedFileName ? state.result?.sourceText ?? "" : "");
   const requiresTypedSource = !selectedFileName;
   const rewriteMetadata = state.result?.metadata ?? defaults.rewriteMetadata;
   const downloadFileName = useMemo(() => {
-    const uploadedBaseName = selectedFileName.replace(/\.[^.]+$/, "").trim();
+    const uploadedBaseName = effectiveUploadedFileName.replace(/\.[^.]+$/, "").trim();
 
     if (uploadedBaseName) {
       return uploadedBaseName;
@@ -93,7 +95,7 @@ export function RewriteWorkbench({
     }
 
     return titleFromText(sourceText || displayText, "humanised-rewrite");
-  }, [defaults.title, displayText, selectedFileName, sourceText]);
+  }, [defaults.title, displayText, effectiveUploadedFileName, sourceText]);
 
   const comparePairs = useMemo(() => {
     if (!compareMode) {
@@ -243,7 +245,7 @@ export function RewriteWorkbench({
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Source text</p>
           <textarea
             name="sourceText"
-            value={draftText}
+            value={editorText}
             onChange={(event) => setDraftText(event.target.value)}
             required={requiresTypedSource}
             rows={18}
