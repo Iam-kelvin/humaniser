@@ -32,6 +32,32 @@ export type RewriteExecutionResult =
       upgradeRequired?: boolean;
     };
 
+function toFriendlyRewriteError(error: unknown) {
+  const message = error instanceof Error ? error.message : "The rewrite provider failed unexpectedly.";
+
+  if (/401|403|unauthorized|invalid api key|api[_ -]?key/i.test(message)) {
+    return "The rewrite service is not configured correctly right now. Check the provider API key and try again.";
+  }
+
+  if (/429|rate limit|too many requests/i.test(message)) {
+    return "The rewrite service is busy right now. Wait a moment and try again.";
+  }
+
+  if (/timeout|timed out|deadline/i.test(message)) {
+    return "The rewrite took too long to finish. Try again in a moment or shorten the source text slightly.";
+  }
+
+  if (/empty|did not return rewrite content|invalid rewrite payload|json rewrite response/i.test(message)) {
+    return "The rewrite service returned an unusable response. Please try again.";
+  }
+
+  if (/fetch failed|network|ENOTFOUND|ECONNRESET|ECONNREFUSED/i.test(message)) {
+    return "The rewrite service could not be reached. Check your connection and try again.";
+  }
+
+  return message;
+}
+
 function assertEntitlements(planCode: PlanCode, input: RewriteInput) {
   const entitlements = getEntitlements(planCode);
 
@@ -153,11 +179,9 @@ export async function executeRewrite(input: {
       },
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "The rewrite provider failed unexpectedly.";
-
     return {
       ok: false,
-      error: message,
+      error: toFriendlyRewriteError(error),
     };
   }
 

@@ -42,6 +42,12 @@ type EditorDefaults = {
   };
 };
 
+type InlineFeedback = {
+  title: string;
+  description: string;
+  tone: "info" | "warning" | "success";
+};
+
 export function RewriteWorkbench({
   defaults,
   explainChangesEnabled,
@@ -71,10 +77,18 @@ export function RewriteWorkbench({
   const [compareMode, setCompareMode] = useState(false);
   const [copied, setCopied] = useState(false);
   const [draftText, setDraftText] = useState(defaults.sourceText);
-  const [uploadFeedback, setUploadFeedback] = useState("");
+  const [uploadFeedback, setUploadFeedback] = useState<InlineFeedback | null>(null);
   const [selectedFileName, setSelectedFileName] = useState("");
   const [dragActive, setDragActive] = useState(false);
   const [downloadingDocx, setDownloadingDocx] = useState(false);
+  const [clientFeedback, setClientFeedback] = useState<InlineFeedback | null>(null);
+  const [preset, setPreset] = useState(defaults.preset);
+  const [tone, setTone] = useState(defaults.tone);
+  const [intensity, setIntensity] = useState(defaults.intensity);
+  const [keepLength, setKeepLength] = useState(false);
+  const [shorten, setShorten] = useState(false);
+  const [expandSlightly, setExpandSlightly] = useState(false);
+  const [preserveTechnicalTerms, setPreserveTechnicalTerms] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const effectiveUploadedFileName = state.result?.uploadedFileName ?? selectedFileName;
 
@@ -126,11 +140,45 @@ export function RewriteWorkbench({
     return structured;
   }, [displayText]);
   const copyReadyText = useMemo(() => formatStructuredPlainText(displayText), [displayText]);
+  const controlsSummary = useMemo(() => {
+    const parts = [
+      `${PRESET_LABELS[preset]} preset`,
+      `${TONE_LABELS[tone]} tone`,
+      `${INTENSITY_LABELS[intensity]} intensity`,
+    ];
+
+    if (shorten) {
+      parts.push("shorter output");
+    } else if (expandSlightly) {
+      parts.push("slightly expanded output");
+    } else if (keepLength) {
+      parts.push("similar length");
+    }
+
+    if (preserveTechnicalTerms) {
+      parts.push("technical terms preserved");
+    }
+
+    return parts.join(" | ");
+  }, [expandSlightly, intensity, keepLength, preset, preserveTechnicalTerms, shorten, tone]);
 
   async function handleCopy() {
-    await navigator.clipboard.writeText(copyReadyText);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1200);
+    try {
+      await navigator.clipboard.writeText(copyReadyText);
+      setCopied(true);
+      setClientFeedback({
+        title: "Copied to clipboard",
+        description: "The rewritten draft is ready to paste into Word, email, or another editor.",
+        tone: "success",
+      });
+      window.setTimeout(() => setCopied(false), 1200);
+    } catch {
+      setClientFeedback({
+        title: "Copy failed",
+        description: "We could not copy the draft automatically. Try again, or use Download DOCX instead.",
+        tone: "warning",
+      });
+    }
   }
 
   async function loadSelectedFile(file: File | null) {
@@ -138,26 +186,38 @@ export function RewriteWorkbench({
 
     if (!file) {
       setSelectedFileName("");
-      setUploadFeedback("");
+      setUploadFeedback(null);
       return;
     }
 
     const uploadError = getDocumentUploadError(file);
 
     if (uploadError) {
-      setUploadFeedback(uploadError);
+      setUploadFeedback({
+        title: "Upload blocked",
+        description: uploadError,
+        tone: "warning",
+      });
       return;
     }
 
     if (isClientPreviewableUpload(file)) {
       const text = normalizeUploadedText(await file.text());
       setDraftText(text);
-      setUploadFeedback(`${file.name} loaded into the editor.`);
+      setUploadFeedback({
+        title: "File loaded into the editor",
+        description: `${file.name} is ready. You can review or edit the extracted text before rewriting.`,
+        tone: "success",
+      });
       return;
     }
 
     setDraftText("");
-    setUploadFeedback(`${file.name} is ready. We'll extract its text on submit.`);
+    setUploadFeedback({
+      title: "File ready for extraction",
+      description: `${file.name} will be extracted on submit, and the extracted text will appear in the editor afterward so you can review it.`,
+      tone: "info",
+    });
   }
 
   async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
@@ -202,8 +262,44 @@ export function RewriteWorkbench({
 
     try {
       await downloadDocx(copyReadyText, downloadFileName);
+      setClientFeedback({
+        title: "DOCX downloaded",
+        description: `${downloadFileName}.docx was prepared from the current rewrite.`,
+        tone: "success",
+      });
+    } catch {
+      setClientFeedback({
+        title: "Download failed",
+        description: "We could not create the DOCX file. Try again, or use Copy as a fallback.",
+        tone: "warning",
+      });
     } finally {
       setDownloadingDocx(false);
+    }
+  }
+
+  function handleKeepLengthChange(checked: boolean) {
+    setKeepLength(checked);
+
+    if (checked) {
+      setShorten(false);
+    }
+  }
+
+  function handleShortenChange(checked: boolean) {
+    setShorten(checked);
+
+    if (checked) {
+      setKeepLength(false);
+      setExpandSlightly(false);
+    }
+  }
+
+  function handleExpandSlightlyChange(checked: boolean) {
+    setExpandSlightly(checked);
+
+    if (checked) {
+      setShorten(false);
     }
   }
 
@@ -236,7 +332,9 @@ export function RewriteWorkbench({
             <input ref={fileInputRef} type="file" name="sourceFile" accept={DOCUMENT_UPLOAD_ACCEPT} className="sr-only" onChange={handleFileChange} />
           </label>
           {uploadFeedback ? (
-            <p className="mt-3 text-sm text-slate-600">{uploadFeedback}</p>
+            <div className="mt-3">
+              <StatusBanner title={uploadFeedback.title} description={uploadFeedback.description} tone={uploadFeedback.tone} />
+            </div>
           ) : (
             <p className="mt-3 text-sm text-slate-500">Prefer pasting? You can still type directly into the editor below.</p>
           )}
@@ -254,21 +352,41 @@ export function RewriteWorkbench({
           />
         </div>
         <div className="grid gap-4 md:grid-cols-3">
-          <SelectField name="preset" label="Preset" defaultValue={defaults.preset} options={allowedPresets.map((value) => ({ value, label: PRESET_LABELS[value] }))} />
-          <SelectField name="tone" label="Tone" defaultValue={defaults.tone} options={allowedTones.map((value) => ({ value, label: TONE_LABELS[value] }))} />
+          <SelectField
+            name="preset"
+            label="Preset"
+            value={preset}
+            onChange={(value) => setPreset(value as WritingPreset)}
+            options={allowedPresets.map((value) => ({ value, label: PRESET_LABELS[value] }))}
+          />
+          <SelectField
+            name="tone"
+            label="Tone"
+            value={tone}
+            onChange={(value) => setTone(value as Tone)}
+            options={allowedTones.map((value) => ({ value, label: TONE_LABELS[value] }))}
+          />
           <SelectField
             name="intensity"
             label="Intensity"
-            defaultValue={defaults.intensity}
+            value={intensity}
+            onChange={(value) => setIntensity(value as RewriteIntensity)}
             options={allowedIntensities.map((value) => ({ value, label: INTENSITY_LABELS[value] }))}
           />
         </div>
+        <p className="text-sm text-slate-500">{controlsSummary}</p>
         <div className="grid gap-3 md:grid-cols-2">
-          <CheckboxField name="keepLength" label="Keep length" />
-          <CheckboxField name="shorten" label="Shorten" />
-          <CheckboxField name="expandSlightly" label="Expand slightly" />
-          <CheckboxField name="preserveTechnicalTerms" label="Preserve technical terms" />
+          <CheckboxField name="keepLength" label="Keep length" checked={keepLength} onChange={handleKeepLengthChange} />
+          <CheckboxField name="shorten" label="Shorten" checked={shorten} onChange={handleShortenChange} />
+          <CheckboxField name="expandSlightly" label="Expand slightly" checked={expandSlightly} onChange={handleExpandSlightlyChange} />
+          <CheckboxField
+            name="preserveTechnicalTerms"
+            label="Preserve technical terms"
+            checked={preserveTechnicalTerms}
+            onChange={setPreserveTechnicalTerms}
+          />
         </div>
+        <p className="text-sm text-slate-500">Tip: `Shorten` overrides length-preserving expansion. Use `Keep length` or `Expand slightly` when you want fuller output.</p>
         <div className="space-y-2">
           <label className="text-sm font-medium text-slate-700" htmlFor="preserveKeywords">
             Preserve keywords
@@ -305,6 +423,7 @@ export function RewriteWorkbench({
             tone={state.ok ? "success" : state.upgradeRequired ? "warning" : "info"}
           />
         )}
+        {clientFeedback && <StatusBanner title={clientFeedback.title} description={clientFeedback.description} tone={clientFeedback.tone} />}
         <Button type="submit" disabled={pending} className="w-full">
           {pending ? "Rewriting..." : "Rewrite text"}
         </Button>
@@ -422,12 +541,14 @@ export function RewriteWorkbench({
 function SelectField({
   name,
   label,
-  defaultValue,
+  value,
+  onChange,
   options,
 }: {
   name: string;
   label: string;
-  defaultValue: string;
+  value: string;
+  onChange: (value: string) => void;
   options: Array<{ value: string; label: string }>;
 }) {
   return (
@@ -435,7 +556,8 @@ function SelectField({
       <span>{label}</span>
       <select
         name={name}
-        defaultValue={defaultValue}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
         className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-[var(--brand)]"
       >
         {options.map((option) => (
@@ -451,13 +573,24 @@ function SelectField({
 function CheckboxField({
   name,
   label,
+  checked,
+  onChange,
 }: {
   name: string;
   label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
 }) {
   return (
     <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
-      <input type="checkbox" name={name} value="true" className="h-4 w-4 rounded border-slate-300 accent-[var(--brand)]" />
+      <input
+        type="checkbox"
+        name={name}
+        value="true"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+        className="h-4 w-4 rounded border-slate-300 accent-[var(--brand)]"
+      />
       <span>{label}</span>
     </label>
   );
