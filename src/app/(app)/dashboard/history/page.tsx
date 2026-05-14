@@ -23,10 +23,10 @@ export default async function HistoryPage({
 
   return (
     <section className="space-y-6">
-      <div className="panel flex flex-col gap-4 p-6">
+      <div className="panel flex flex-col gap-4 p-5 sm:p-6">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">History</p>
-          <h1 className="mt-2 text-4xl font-semibold text-slate-950">Review and reopen past rewrites.</h1>
+          <h1 className="mt-2 text-3xl font-semibold text-slate-950 sm:text-4xl">Review and reopen past rewrites.</h1>
         </div>
         <form className="grid gap-4 md:grid-cols-3">
           <select name="preset" defaultValue={preset ?? ""} className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none">
@@ -45,11 +45,11 @@ export default async function HistoryPage({
               </option>
             ))}
           </select>
-          <div className="flex gap-3">
-            <Button type="submit" variant="secondary">
+          <div className="flex flex-col gap-3 min-[420px]:flex-row">
+            <Button type="submit" variant="secondary" className="w-full min-[420px]:w-auto">
               Apply filters
             </Button>
-            <ButtonLink href="/dashboard/history" variant="ghost">
+            <ButtonLink href="/dashboard/history" variant="ghost" className="w-full min-[420px]:w-auto">
               Clear filters
             </ButtonLink>
           </div>
@@ -75,7 +75,7 @@ export default async function HistoryPage({
                     {rewrite.document.sourceType === "DOCUMENT_UPLOAD" ? "Uploaded document" : "Pasted text"}
                   </p>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-4">
                   <span className="text-sm text-slate-500">{formatDate(rewrite.createdAt)}</span>
                   <Link href={`/dashboard/new?rewriteId=${rewrite.id}`} className="text-sm font-semibold text-[var(--brand)]">
                     Reopen

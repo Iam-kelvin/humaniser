@@ -13,10 +13,10 @@ export default async function DashboardLayout({
   const planCode = await resolveCurrentPlan(viewer.user.id);
 
   return (
-    <div className="container-shell page-fade py-8">
-      <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
+    <div className="container-shell page-fade py-4 md:py-6 lg:py-8">
+      <div className="grid gap-4 md:gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
         <AppSidebar planCode={planCode} />
-        <div className="space-y-6">{children}</div>
+        <div className="min-w-0 space-y-6">{children}</div>
       </div>
     </div>
   );

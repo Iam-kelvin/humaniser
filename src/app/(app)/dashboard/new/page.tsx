@@ -18,10 +18,10 @@ export default async function NewRewritePage({
 
   return (
     <section className="space-y-6">
-      <div className="panel flex flex-col gap-4 p-6 md:flex-row md:items-end md:justify-between">
+      <div className="panel flex flex-col gap-4 p-5 sm:p-6 md:flex-row md:items-end md:justify-between">
         <div className="space-y-2">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">New rewrite</p>
-          <h1 className="text-4xl font-semibold text-slate-950">Refine your draft with audience-aware controls.</h1>
+          <h1 className="text-3xl font-semibold text-slate-950 sm:text-4xl">Refine your draft with audience-aware controls.</h1>
           <p className="max-w-3xl text-sm leading-7 text-slate-600">
             Paste the source text or upload a PDF, DOCX, or text-based document, choose the tone and intensity you need, and generate a clearer version without changing what you mean.
           </p>

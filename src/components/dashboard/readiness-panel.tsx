@@ -4,7 +4,7 @@ import type { AppReadiness } from "@/lib/readiness";
 
 export function ReadinessPanel({ readiness }: { readiness: AppReadiness }) {
   return (
-    <div className="panel space-y-5 p-6">
+    <div className="panel space-y-5 p-5 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Readiness</p>

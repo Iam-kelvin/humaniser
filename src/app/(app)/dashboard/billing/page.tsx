@@ -14,16 +14,16 @@ export default async function BillingPage() {
 
   return (
     <section className="space-y-6">
-      <div className="panel p-6">
+      <div className="panel p-5 sm:p-6">
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Billing</p>
-        <h1 className="mt-2 text-4xl font-semibold text-slate-950">Manage plan and subscription access.</h1>
+        <h1 className="mt-2 text-3xl font-semibold text-slate-950 sm:text-4xl">Manage plan and subscription access.</h1>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
           Upgrade when you need more monthly volume, stronger controls, and access to the full subscription flow.
         </p>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <div className="panel space-y-5 p-6">
+        <div className="panel space-y-5 p-5 sm:p-6">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Current plan</p>
             <h2 className="mt-2 text-3xl font-semibold text-slate-900">{PLAN_LABELS[planCode]}</h2>
@@ -46,7 +46,9 @@ export default async function BillingPage() {
                 tone={billing.checkoutReady ? "success" : "warning"}
               />
               <form action={startUpgradeAction}>
-                <Button type="submit">Upgrade to Pro</Button>
+                <Button type="submit" className="w-full sm:w-auto">
+                  Upgrade to Pro
+                </Button>
               </form>
             </div>
           ) : (
@@ -59,7 +61,7 @@ export default async function BillingPage() {
                 />
               ) : null}
               <form action={openBillingPortalAction}>
-                <Button type="submit" variant="secondary" disabled={!billing.customer}>
+                <Button type="submit" variant="secondary" disabled={!billing.customer} className="w-full sm:w-auto">
                   Open billing portal
                 </Button>
               </form>

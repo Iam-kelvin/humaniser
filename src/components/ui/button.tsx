@@ -5,13 +5,13 @@ import { cn } from "@/lib/utils";
 
 const buttonStyles = {
   primary:
-    "inline-flex items-center justify-center rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[var(--brand-strong)]",
+    "inline-flex min-h-11 max-w-full items-center justify-center rounded-full bg-[var(--brand)] px-5 py-3 text-center text-sm font-semibold leading-tight text-white shadow-sm transition hover:bg-[var(--brand-strong)] disabled:cursor-not-allowed disabled:opacity-60",
   secondary:
-    "inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:border-slate-400 hover:bg-slate-50",
+    "inline-flex min-h-11 max-w-full items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-3 text-center text-sm font-semibold leading-tight text-slate-900 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60",
   ghost:
-    "inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-white/80",
+    "inline-flex min-h-10 max-w-full items-center justify-center rounded-full px-4 py-2 text-center text-sm font-medium leading-tight text-slate-700 transition hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-60",
   danger:
-    "inline-flex items-center justify-center rounded-full bg-[var(--danger)] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90",
+    "inline-flex min-h-11 max-w-full items-center justify-center rounded-full bg-[var(--danger)] px-5 py-3 text-center text-sm font-semibold leading-tight text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60",
 };
 
 type SharedProps = {

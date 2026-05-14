@@ -13,9 +13,9 @@ export default function DashboardError({
     error.name === "DatabaseNotConfiguredError" || error.message.includes("DATABASE_URL");
 
   return (
-    <div className="panel space-y-4 p-8">
+    <div className="panel space-y-4 p-5 sm:p-8">
       <h1 className="text-3xl font-semibold text-slate-900">
-        {missingDatabase ? "Database setup needed before loading the dashboard." : "We couldn&apos;t load this dashboard view."}
+        {missingDatabase ? "Database setup needed before loading the dashboard." : "We couldn't load this dashboard view."}
       </h1>
       {missingDatabase ? (
         <div className="space-y-3 text-sm leading-7 text-slate-600">
@@ -32,7 +32,9 @@ npx prisma db seed`}
           This usually means a temporary issue with authentication, the database connection, or a pending integration setting.
         </p>
       )}
-      <Button onClick={() => reset()}>Try again</Button>
+      <Button onClick={() => reset()} className="w-full sm:w-auto">
+        Try again
+      </Button>
     </div>
   );
 }

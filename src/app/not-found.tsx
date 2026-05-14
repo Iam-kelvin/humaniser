@@ -3,15 +3,17 @@ import { ButtonLink } from "@/components/ui/button";
 export default function NotFound() {
   return (
     <main className="container-shell page-fade flex min-h-screen items-center justify-center py-20">
-      <div className="panel max-w-xl space-y-4 p-10 text-center">
+      <div className="panel max-w-xl space-y-4 p-6 text-center sm:p-10">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">404</p>
-        <h1 className="text-4xl font-semibold text-slate-900">This page drifted out of range.</h1>
+        <h1 className="text-3xl font-semibold text-slate-900 sm:text-4xl">This page drifted out of range.</h1>
         <p className="text-sm leading-7 text-slate-600">
           The route you requested does not exist, or it may have moved while the product was being updated.
         </p>
-        <div className="flex justify-center gap-3">
-          <ButtonLink href="/">Back home</ButtonLink>
-          <ButtonLink href="/dashboard" variant="secondary">
+        <div className="flex flex-col justify-center gap-3 min-[420px]:flex-row">
+          <ButtonLink href="/" className="w-full min-[420px]:w-auto">
+            Back home
+          </ButtonLink>
+          <ButtonLink href="/dashboard" variant="secondary" className="w-full min-[420px]:w-auto">
             Open dashboard
           </ButtonLink>
         </div>

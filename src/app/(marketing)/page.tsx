@@ -10,27 +10,29 @@ const valuePoints = [
 
 export default function HomePage() {
   return (
-    <div className="container-shell page-fade space-y-14 md:space-y-18">
-      <section className="grid gap-10 pt-8 md:pt-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-center">
+    <div className="container-shell page-fade space-y-10 md:space-y-14">
+      <section className="grid gap-8 pt-4 md:gap-10 md:pt-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-center">
         <div className="space-y-6">
           <Badge>Human-centred rewriting</Badge>
           <div className="space-y-5">
-            <h1 className="max-w-4xl text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl md:text-6xl">
+            <h1 className="max-w-4xl text-3xl font-semibold tracking-tight text-slate-950 sm:text-5xl md:text-6xl">
               Rewrite AI-assisted text so it sounds natural, clear, and right for the person reading it.
             </h1>
-            <p className="max-w-2xl text-lg leading-8 text-slate-600">
+            <p className="max-w-2xl text-base leading-7 text-slate-600 sm:text-lg sm:leading-8">
               Turn robotic drafts into polished emails and readable research summaries without changing what you mean.
             </p>
           </div>
-          <div className="flex flex-wrap gap-3">
-            <ButtonLink href="/sign-up">Start free</ButtonLink>
-            <ButtonLink href="/examples" variant="secondary">
+          <div className="flex flex-col gap-3 min-[420px]:flex-row min-[420px]:flex-wrap">
+            <ButtonLink href="/sign-up" className="w-full min-[420px]:w-auto">
+              Start free
+            </ButtonLink>
+            <ButtonLink href="/examples" variant="secondary" className="w-full min-[420px]:w-auto">
               View examples
             </ButtonLink>
           </div>
           <div className="grid gap-3 pt-4 sm:grid-cols-2">
             {valuePoints.map((point) => (
-              <div key={point} className="rounded-3xl border border-white/70 bg-white/70 px-4 py-4 text-sm font-medium text-slate-700">
+              <div key={point} className="rounded-2xl border border-white/70 bg-white/70 px-4 py-4 text-sm font-medium text-slate-700 sm:rounded-3xl">
                 {point}
               </div>
             ))}

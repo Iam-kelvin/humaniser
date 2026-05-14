@@ -39,11 +39,11 @@ export default async function PricingPage() {
   const planCode = session.userId ? await resolveCurrentPlan(session.userId) : null;
 
   return (
-    <div className="container-shell page-fade space-y-10 pt-8 md:space-y-12 md:pt-10">
+    <div className="container-shell page-fade space-y-8 pt-4 md:space-y-12 md:pt-10">
       <div className="space-y-4 text-center">
         <Badge>Pricing</Badge>
-        <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">Simple plans for clearer writing.</h1>
-        <p className="mx-auto max-w-3xl text-lg leading-8 text-slate-600">
+        <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-5xl">Simple plans for clearer writing.</h1>
+        <p className="mx-auto max-w-3xl text-base leading-7 text-slate-600 sm:text-lg sm:leading-8">
           Start free, then upgrade when you need more volume, more tone control, and deeper refinement.
         </p>
       </div>
@@ -54,11 +54,11 @@ export default async function PricingPage() {
           const isCurrentPro = session.userId && tier.name === "Pro" && planCode === "PRO";
 
           return (
-            <div key={tier.name} className="panel flex h-full flex-col gap-6 p-6 md:p-8">
+            <div key={tier.name} className="panel flex h-full flex-col gap-6 p-5 sm:p-6 md:p-8">
               <div className="space-y-3">
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">{tier.name}</p>
                 <div className="flex items-end gap-2">
-                  <h2 className="text-5xl font-semibold text-slate-950">{tier.price}</h2>
+                  <h2 className="text-4xl font-semibold text-slate-950 sm:text-5xl">{tier.price}</h2>
                   {tier.name === "Pro" && <p className="pb-2 text-sm text-slate-500">/ month</p>}
                 </div>
                 <p className="text-sm leading-7 text-slate-600">{tier.description}</p>

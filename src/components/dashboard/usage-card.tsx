@@ -19,8 +19,8 @@ export function UsageCard({
   const wordPercent = Math.min((wordsUsed / wordsLimit) * 100, 100);
 
   return (
-    <div className="panel p-6">
-      <div className="flex items-start justify-between gap-4">
+    <div className="panel p-5 sm:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Usage</p>
           <h3 className="mt-2 text-2xl font-semibold text-slate-900">{PLAN_LABELS[planCode]} plan</h3>

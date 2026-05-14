@@ -34,13 +34,13 @@ const tones = [
 
 export default function ExamplesPage() {
   return (
-    <div className="container-shell page-fade space-y-10 pt-8 md:space-y-12 md:pt-10">
+    <div className="container-shell page-fade space-y-8 pt-4 md:space-y-12 md:pt-10">
       <div className="space-y-4">
         <Badge>Examples</Badge>
-        <h1 className="max-w-5xl text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
+        <h1 className="max-w-5xl text-3xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
           Before and after, without changing the message.
         </h1>
-        <p className="max-w-3xl text-lg leading-8 text-slate-600">
+        <p className="max-w-3xl text-base leading-7 text-slate-600 sm:text-lg sm:leading-8">
           Humaniser is designed to preserve meaning while improving tone, flow, and audience fit.
         </p>
       </div>

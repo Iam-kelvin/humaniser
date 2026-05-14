@@ -28,7 +28,7 @@ export function SettingsForm({
   const [state, formAction, pending] = useActionState(saveSettingsAction, initialState);
 
   return (
-    <form action={formAction} className="panel space-y-5 p-6">
+    <form action={formAction} className="panel space-y-5 p-5 sm:p-6">
       <div className="grid gap-4 md:grid-cols-2">
         <Field label="Display name" name="displayName" defaultValue={defaults.displayName} />
         <Field label="Default language" name="defaultLanguage" defaultValue={defaults.defaultLanguage} />
@@ -61,7 +61,7 @@ export function SettingsForm({
         <p className="text-sm text-amber-700">Custom instructions unlock on the Pro plan.</p>
       )}
       {state.message && <p className={`text-sm ${state.ok ? "text-emerald-700" : "text-red-700"}`}>{state.message}</p>}
-      <Button type="submit" disabled={pending}>
+      <Button type="submit" disabled={pending} className="w-full sm:w-auto">
         {pending ? "Saving..." : "Save settings"}
       </Button>
     </form>

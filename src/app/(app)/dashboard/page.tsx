@@ -17,15 +17,17 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <section className="panel flex flex-col gap-5 p-6 md:flex-row md:items-end md:justify-between">
+      <section className="panel flex flex-col gap-5 p-5 sm:p-6 md:flex-row md:items-end md:justify-between">
         <div className="space-y-3">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Dashboard</p>
-          <h1 className="text-4xl font-semibold text-slate-950">Keep meaning intact. Improve how it lands.</h1>
+          <h1 className="text-3xl font-semibold text-slate-950 sm:text-4xl">Keep meaning intact. Improve how it lands.</h1>
           <p className="max-w-3xl text-sm leading-7 text-slate-600">
             You&apos;re on the {PLAN_LABELS[data.planCode]} plan. Start a new rewrite, review recent output, or head to billing when you need more control.
           </p>
         </div>
-        <ButtonLink href="/dashboard/new">Start a new rewrite</ButtonLink>
+        <ButtonLink href="/dashboard/new" className="w-full sm:w-auto">
+          Start a new rewrite
+        </ButtonLink>
       </section>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
@@ -36,8 +38,8 @@ export default async function DashboardPage() {
           wordsUsed={data.usage.inputWordsUsed}
           wordsLimit={data.usage.entitlements.monthlyInputWords}
         />
-        <div className="panel p-6">
-          <div className="flex items-center justify-between">
+        <div className="panel p-5 sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Recent rewrites</p>
               <h2 className="mt-2 text-2xl font-semibold text-slate-900">Latest activity</h2>

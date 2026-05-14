@@ -1,7 +1,7 @@
 export default function TermsPage() {
   return (
-    <div className="container-shell page-fade py-12">
-      <article className="panel prose prose-slate max-w-none p-8">
+    <div className="container-shell page-fade py-8 md:py-12">
+      <article className="panel prose prose-slate max-w-none p-5 sm:p-8">
         <h1>Terms of Service</h1>
         <p>
           Humaniser is provided for professional writing refinement, including emails and research summaries. You are

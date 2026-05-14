@@ -304,18 +304,18 @@ export function RewriteWorkbench({
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-      <form action={formAction} encType="multipart/form-data" className="panel space-y-5 p-6">
+    <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <form action={formAction} encType="multipart/form-data" className="panel min-w-0 space-y-5 p-5 sm:p-6">
         <input type="hidden" name="documentId" value={defaults.documentId ?? ""} />
         <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
+            <div className="min-w-0">
               <p className="text-sm font-semibold text-slate-900">Document upload</p>
               <p className="mt-1 text-sm leading-6 text-slate-600">
                 Upload a PDF, DOCX, or text-based file and Humaniser will pull the readable text into the rewrite flow.
               </p>
             </div>
-            {selectedFileName ? <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{selectedFileName}</p> : null}
+            {selectedFileName ? <p className="max-w-full break-words text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{selectedFileName}</p> : null}
           </div>
           <label
             className={`mt-4 flex cursor-pointer flex-col items-center justify-center rounded-3xl border border-dashed px-6 py-8 text-center transition ${
@@ -429,20 +429,20 @@ export function RewriteWorkbench({
         </Button>
       </form>
 
-      <div className="panel space-y-5 p-6">
+      <div className="panel min-w-0 space-y-5 p-5 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
+          <div className="min-w-0">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Output</p>
             <h2 className="mt-2 text-2xl font-semibold text-slate-900">Refined draft</h2>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" variant="secondary" onClick={() => setCompareMode((value) => !value)}>
+          <div className="flex w-full flex-col gap-2 min-[480px]:w-auto min-[480px]:flex-row min-[480px]:flex-wrap">
+            <Button type="button" variant="secondary" onClick={() => setCompareMode((value) => !value)} className="w-full min-[480px]:w-auto">
               {compareMode ? "Hide compare" : "Compare mode"}
             </Button>
-            <Button type="button" variant="secondary" onClick={handleDownloadDocx} disabled={!displayText || downloadingDocx}>
+            <Button type="button" variant="secondary" onClick={handleDownloadDocx} disabled={!displayText || downloadingDocx} className="w-full min-[480px]:w-auto">
               {downloadingDocx ? "Preparing DOCX..." : "Download DOCX"}
             </Button>
-            <Button type="button" variant="secondary" onClick={handleCopy} disabled={!displayText}>
+            <Button type="button" variant="secondary" onClick={handleCopy} disabled={!displayText} className="w-full min-[480px]:w-auto">
               {copied ? "Copied" : "Copy"}
             </Button>
           </div>
@@ -450,7 +450,7 @@ export function RewriteWorkbench({
 
         {displayText ? (
           <>
-            <div className="rounded-3xl border border-slate-200 bg-white p-5 text-sm leading-7 text-slate-800">
+            <div className="rounded-3xl border border-slate-200 bg-white p-5 text-sm leading-7 break-words text-slate-800">
               {structuredOutput ? (
                 <div className="space-y-6">
                   {structuredOutput.sections.map((section, index) => (
@@ -474,11 +474,11 @@ export function RewriteWorkbench({
                     <div className="mt-4 grid gap-4 md:grid-cols-2">
                       <div className="rounded-2xl border border-slate-200 bg-white p-4">
                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Original</p>
-                        <p className="mt-3 text-sm leading-7 whitespace-pre-wrap text-slate-700">{section.sourceText || "No content"}</p>
+                        <p className="mt-3 text-sm leading-7 whitespace-pre-wrap break-words text-slate-700">{section.sourceText || "No content"}</p>
                       </div>
                       <div className="rounded-2xl border border-slate-200 bg-white p-4">
                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Humanised</p>
-                        <p className="mt-3 text-sm leading-7 whitespace-pre-wrap text-slate-700">{section.rewrittenText || "No content"}</p>
+                        <p className="mt-3 text-sm leading-7 whitespace-pre-wrap break-words text-slate-700">{section.rewrittenText || "No content"}</p>
                       </div>
                     </div>
                   </div>
@@ -489,7 +489,7 @@ export function RewriteWorkbench({
                 {comparePairs.map((pair) => (
                   <div key={pair.label} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{pair.label}</p>
-                    <p className="mt-3 text-sm leading-7 whitespace-pre-wrap text-slate-700">{pair.value}</p>
+                    <p className="mt-3 text-sm leading-7 whitespace-pre-wrap break-words text-slate-700">{pair.value}</p>
                   </div>
                 ))}
               </div>
@@ -526,7 +526,7 @@ export function RewriteWorkbench({
             <p className="text-sm text-slate-500">{state.result?.saveStatus ?? defaults.saveStatus ?? "Ready to save after your first rewrite"}</p>
           </>
         ) : (
-          <div className="rounded-3xl border border-dashed border-slate-300 bg-white/70 p-8">
+          <div className="rounded-3xl border border-dashed border-slate-300 bg-white/70 p-5 sm:p-8">
             <p className="text-lg font-semibold text-slate-900">Your rewritten draft will appear here.</p>
             <p className="mt-2 max-w-lg text-sm leading-7 text-slate-600">
               Humaniser keeps the intended meaning intact while improving tone, flow, and audience fit.
