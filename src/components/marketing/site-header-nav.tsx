@@ -20,10 +20,10 @@ export function SiteHeaderNav({ signedIn }: { signedIn: boolean }) {
     <header className="sticky top-0 z-40 px-3 pt-3 sm:px-4 md:px-6 md:pt-4">
       <div className="container-shell">
         <div className="panel overflow-hidden backdrop-blur supports-[backdrop-filter]:bg-[color:color-mix(in_srgb,var(--surface)_86%,transparent)]">
-          <div className="flex min-h-16 items-center gap-3 px-3 py-3 sm:px-4 md:px-5">
+          <div className="flex min-h-16 items-center gap-3 px-3 py-3 sm:px-4 md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:gap-6 md:px-5">
             <Link
               href="/"
-              className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2 md:flex-none"
+              className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2 md:flex-none md:justify-self-start"
               aria-label="Humaniser home"
             >
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--brand)] text-sm font-bold text-white">
@@ -35,7 +35,7 @@ export function SiteHeaderNav({ signedIn }: { signedIn: boolean }) {
               </div>
             </Link>
 
-            <nav className="hidden items-center gap-1 md:flex" aria-label="Main navigation">
+            <nav className="hidden items-center justify-center gap-6 md:flex" aria-label="Main navigation">
               {MARKETING_NAV.map((item) => (
                 <HeaderLink key={item.href} href={item.href} active={pathname === item.href}>
                   {item.label}
@@ -43,7 +43,7 @@ export function SiteHeaderNav({ signedIn }: { signedIn: boolean }) {
               ))}
             </nav>
 
-            <div className="ml-auto hidden items-center gap-2 md:flex">
+            <div className="hidden items-center justify-self-end gap-2 md:flex">
               {signedIn ? (
                 <>
                   <ButtonLink href="/dashboard" variant="secondary" className="px-4 py-2.5">
@@ -136,8 +136,8 @@ function HeaderLink({
       href={href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-white hover:text-slate-950",
-        active && "bg-white text-slate-950 shadow-sm",
+        "text-sm font-medium text-slate-600 transition hover:text-slate-950",
+        active && "text-slate-950",
       )}
     >
       {children}
