@@ -19,11 +19,11 @@ export function SiteHeaderNav({ signedIn }: { signedIn: boolean }) {
   return (
     <header className="sticky top-0 z-40 px-3 pt-3 sm:px-4 md:px-6 md:pt-4">
       <div className="container-shell">
-        <div className="panel overflow-hidden backdrop-blur supports-[backdrop-filter]:bg-[color:color-mix(in_srgb,var(--surface)_86%,transparent)]">
-          <div className="flex min-h-16 items-center gap-3 px-3 py-3 sm:px-4 md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:gap-6 md:px-5">
+        <div className="relative panel overflow-visible backdrop-blur supports-[backdrop-filter]:bg-[color:color-mix(in_srgb,var(--surface)_86%,transparent)]">
+          <div className="grid min-h-16 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 px-3 py-3 sm:px-4 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:gap-6 md:px-5">
             <Link
               href="/"
-              className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2 md:flex-none md:justify-self-start"
+              className="flex min-w-0 items-center gap-3 rounded-2xl outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2 md:justify-self-start"
               aria-label="Humaniser home"
             >
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--brand)] text-sm font-bold text-white">
@@ -31,7 +31,7 @@ export function SiteHeaderNav({ signedIn }: { signedIn: boolean }) {
               </div>
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-slate-900">Humaniser</p>
-                <p className="hidden truncate text-xs text-slate-500 min-[380px]:block">Natural writing refinement</p>
+                <p className="hidden truncate text-xs text-slate-500 min-[430px]:block">Natural writing refinement</p>
               </div>
             </Link>
 
@@ -63,11 +63,11 @@ export function SiteHeaderNav({ signedIn }: { signedIn: boolean }) {
               )}
             </div>
 
-            <div className="ml-auto flex shrink-0 items-center gap-2 md:hidden">
+            <div className="flex shrink-0 items-center justify-self-end gap-2 md:hidden">
               {signedIn ? (
                 <UserButton />
               ) : (
-                <ButtonLink href="/sign-up" className="min-h-10 px-3 py-2 text-xs min-[380px]:text-sm">
+                <ButtonLink href="/sign-up" className="min-h-10 px-3 py-2 text-xs min-[430px]:text-sm">
                   Start free
                 </ButtonLink>
               )}
@@ -86,10 +86,18 @@ export function SiteHeaderNav({ signedIn }: { signedIn: boolean }) {
 
           <div
             id="mobile-site-navigation"
-            className={cn("grid transition-[grid-template-rows] duration-200 md:hidden", menuOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}
+            className={cn(
+              "pointer-events-none absolute left-0 right-0 top-full z-50 px-1 pt-2 opacity-0 transition duration-200 md:hidden",
+              menuOpen && "pointer-events-auto opacity-100",
+            )}
           >
-            <div className="overflow-hidden">
-              <nav className="grid gap-2 border-t border-[var(--line)] p-3" aria-label="Mobile navigation">
+            <div
+              className={cn(
+                "origin-top translate-y-2 rounded-[2rem] border border-[var(--line)] bg-white/96 p-3 shadow-[0_24px_80px_rgba(15,23,42,0.16)] backdrop-blur transition duration-200",
+                menuOpen && "translate-y-0",
+              )}
+            >
+              <nav className="grid gap-2" aria-label="Mobile navigation">
                 {MARKETING_NAV.map((item) => (
                   <MobileHeaderLink key={item.href} href={item.href} active={pathname === item.href} onClick={closeMenu}>
                     {item.label}

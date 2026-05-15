@@ -8,6 +8,18 @@ const valuePoints = [
   "Works for emails and research summaries",
 ];
 
+const beforeSignals = [
+  "Indirect opener",
+  "Heavy phrasing",
+  "Vague timeline",
+];
+
+const afterSignals = [
+  "Clear purpose",
+  "Natural tone",
+  "Stronger next step",
+];
+
 export default function HomePage() {
   return (
     <div className="container-shell page-fade space-y-10 md:space-y-14">
@@ -41,18 +53,44 @@ export default function HomePage() {
         <div className="panel overflow-hidden lg:self-start">
           <div className="grid gap-0 md:grid-cols-2">
             <div className="border-b border-[var(--line)] bg-slate-950 p-6 text-slate-100 md:border-b-0 md:border-r">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-teal-200">Before</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-teal-200">Before</p>
+                {beforeSignals.map((signal) => (
+                  <span
+                    key={signal}
+                    className="rounded-full border border-white/12 bg-white/6 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-300"
+                  >
+                    {signal}
+                  </span>
+                ))}
+              </div>
               <p className="mt-4 text-sm leading-7 text-slate-300">
                 I wanted to reach out to follow up regarding the meeting yesterday and let you know that I am currently
                 reviewing the next steps for the proposal. I believe there is meaningful value we can unlock if we are
                 able to align on timelines soon.
               </p>
+              <p className="mt-4 text-xs leading-6 text-slate-400">
+                The meaning is there, but the message starts slowly and buries the action you want the reader to take.
+              </p>
             </div>
             <div className="bg-[var(--surface-strong)] p-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--brand-strong)]">After</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--brand-strong)]">After</p>
+                {afterSignals.map((signal) => (
+                  <span
+                    key={signal}
+                    className="rounded-full border border-[color:color-mix(in_srgb,var(--brand)_18%,white)] bg-white/80 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--brand-strong)]"
+                  >
+                    {signal}
+                  </span>
+                ))}
+              </div>
               <p className="mt-4 text-sm leading-7 text-slate-700">
                 I wanted to follow up on yesterday&apos;s meeting and share where we are on the proposal. I&apos;m reviewing
                 the next steps now, and if we align on timing soon, we can move this forward with confidence.
+              </p>
+              <p className="mt-4 text-xs leading-6 text-slate-500">
+                Same intent, but the opener is tighter, the status is clearer, and the next-step urgency lands faster.
               </p>
             </div>
           </div>
