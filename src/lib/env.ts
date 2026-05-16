@@ -1,18 +1,36 @@
 import { z } from "zod";
 
+const optionalString = z.preprocess((value) => {
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  const trimmed = value.trim();
+  return trimmed === "" ? undefined : trimmed;
+}, z.string().optional());
+
+const optionalUrl = z.preprocess((value) => {
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  const trimmed = value.trim();
+  return trimmed === "" ? undefined : trimmed;
+}, z.string().url().optional());
+
 const envSchema = z.object({
-  DATABASE_URL: z.string().optional(),
-  CLERK_SECRET_KEY: z.string().optional(),
-  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().optional(),
-  NEXT_PUBLIC_APP_URL: z.string().url().optional(),
+  DATABASE_URL: optionalString,
+  CLERK_SECRET_KEY: optionalString,
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: optionalString,
+  NEXT_PUBLIC_APP_URL: optionalUrl,
   HUMANISER_REWRITE_PROVIDER: z.string().default("mock"),
-  NEXT_PUBLIC_SHOW_READINESS_CHECKLIST: z.string().optional(),
-  GROQ_API_KEY: z.string().optional(),
-  GROQ_MODEL: z.string().optional(),
-  PADDLE_API_KEY: z.string().optional(),
-  PADDLE_WEBHOOK_SECRET: z.string().optional(),
-  PADDLE_PRO_PRICE_ID: z.string().optional(),
-  PADDLE_DEFAULT_CHECKOUT_URL: z.string().url().optional(),
+  NEXT_PUBLIC_SHOW_READINESS_CHECKLIST: optionalString,
+  GROQ_API_KEY: optionalString,
+  GROQ_MODEL: optionalString,
+  PADDLE_API_KEY: optionalString,
+  PADDLE_WEBHOOK_SECRET: optionalString,
+  PADDLE_PRO_PRICE_ID: optionalString,
+  PADDLE_DEFAULT_CHECKOUT_URL: optionalUrl,
 });
 
 export type AppEnv = z.infer<typeof envSchema>;

@@ -20,7 +20,20 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased" suppressHydrationWarning>
       <body className="min-h-full bg-[var(--page)] text-slate-950">
-        <ClerkProvider>{children}</ClerkProvider>
+        <ClerkProvider
+          appearance={{
+            elements: {
+              footer: "hidden",
+              footerPages: "hidden",
+              footerPagesDivider: "hidden",
+              footerAction: "hidden",
+              footerActionText: "hidden",
+              footerActionLink: "hidden",
+            },
+          }}
+        >
+          {children}
+        </ClerkProvider>
       </body>
     </html>
   );

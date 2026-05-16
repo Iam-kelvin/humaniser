@@ -1,10 +1,10 @@
 "use client";
 
-import { UserButton } from "@clerk/nextjs";
 import { CreditCard, History, Home, LayoutDashboard, PenLine, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { AccountMenu } from "@/components/auth/account-menu";
 import { DASHBOARD_NAV, PLAN_LABELS } from "@/lib/domain";
 import type { PlanCode } from "@/lib/domain";
 import { cn } from "@/lib/utils";
@@ -40,7 +40,7 @@ export function AppSidebar({
             <p className="truncate text-xs text-slate-500">{PLAN_LABELS[planCode]} plan</p>
           </div>
         </Link>
-        <UserButton />
+        <AccountMenu />
       </div>
       <nav
         className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0 lg:pb-0 [&::-webkit-scrollbar]:hidden"
@@ -64,7 +64,9 @@ export function AppSidebar({
               aria-current={active ? "page" : undefined}
               className={cn(
                 "inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition lg:w-full lg:rounded-2xl lg:px-4 lg:py-3",
-                active ? "bg-slate-900 text-white shadow-sm" : "bg-white/70 text-slate-600 hover:bg-white hover:text-slate-950 lg:bg-transparent",
+                active
+                  ? "bg-[var(--brand)] text-white shadow-[0_10px_24px_rgba(15,118,110,0.22)] ring-1 ring-[color:color-mix(in_srgb,var(--brand-strong)_32%,white)]"
+                  : "bg-white/70 text-slate-600 hover:bg-white hover:text-slate-950 lg:bg-transparent",
               )}
             >
               <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />

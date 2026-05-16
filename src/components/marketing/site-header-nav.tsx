@@ -1,12 +1,12 @@
 "use client";
 
-import { UserButton } from "@clerk/nextjs";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { useState } from "react";
 
+import { AccountMenu } from "@/components/auth/account-menu";
 import { ButtonLink } from "@/components/ui/button";
 import { MARKETING_NAV } from "@/lib/domain";
 import { cn } from "@/lib/utils";
@@ -49,7 +49,7 @@ export function SiteHeaderNav({ signedIn }: { signedIn: boolean }) {
                   <ButtonLink href="/dashboard" variant="secondary" className="px-4 py-2.5">
                     Dashboard
                   </ButtonLink>
-                  <UserButton />
+                  <AccountMenu />
                 </>
               ) : (
                 <>
@@ -65,7 +65,7 @@ export function SiteHeaderNav({ signedIn }: { signedIn: boolean }) {
 
             <div className="flex shrink-0 items-center justify-self-end gap-2 md:hidden">
               {signedIn ? (
-                <UserButton />
+                <AccountMenu compact />
               ) : (
                 <ButtonLink href="/sign-up" className="min-h-10 px-3 py-2 text-xs min-[430px]:text-sm">
                   Start free

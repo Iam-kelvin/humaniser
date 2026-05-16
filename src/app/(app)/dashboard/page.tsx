@@ -12,8 +12,11 @@ import { formatDate } from "@/lib/utils";
 
 export default async function DashboardPage() {
   const viewer = await requireViewer();
-  const [data, readiness] = await Promise.all([getDashboardData(viewer.user.id), getAppReadiness()]);
   const showReadinessChecklist = process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_SHOW_READINESS_CHECKLIST === "true";
+  const [data, readiness] = await Promise.all([
+    getDashboardData(viewer.user.id),
+    showReadinessChecklist ? Promise.resolve(getAppReadiness()) : Promise.resolve(null),
+  ]);
 
   return (
     <>
@@ -79,7 +82,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {showReadinessChecklist ? <ReadinessPanel readiness={readiness} /> : null}
+      {showReadinessChecklist && readiness ? <ReadinessPanel readiness={readiness} /> : null}
     </>
   );
 }
