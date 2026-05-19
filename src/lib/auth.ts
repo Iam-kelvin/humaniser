@@ -5,6 +5,39 @@ import "server-only";
 import { assertDatabaseConfigured } from "@/lib/database";
 import { prisma } from "@/lib/prisma";
 
+function extractPrimaryEmail(sessionClaims: unknown) {
+  if (!sessionClaims || typeof sessionClaims !== "object") {
+    return null;
+  }
+
+  const claims = sessionClaims as Record<string, unknown>;
+
+  const directEmail =
+    typeof claims.email === "string"
+      ? claims.email
+      : typeof claims.emailAddress === "string"
+        ? claims.emailAddress
+        : typeof claims.email_address === "string"
+          ? claims.email_address
+          : null;
+
+  if (directEmail) {
+    return directEmail;
+  }
+
+  const emailList =
+    Array.isArray(claims.email_addresses) ? claims.email_addresses :
+    Array.isArray(claims.emailAddresses) ? claims.emailAddresses :
+    null;
+
+  if (!emailList?.length) {
+    return null;
+  }
+
+  const firstEmail = emailList.find((value) => typeof value === "string");
+  return typeof firstEmail === "string" ? firstEmail : null;
+}
+
 export async function getViewer() {
   const session = await auth();
 
@@ -12,25 +45,57 @@ export async function getViewer() {
     return null;
   }
 
-  const clerkUser = await currentUser();
+  assertDatabaseConfigured();
 
-  if (!clerkUser?.primaryEmailAddress?.emailAddress) {
-    throw new Error("Signed-in user is missing a primary email address.");
+  const existingUser = await prisma.user.findUnique({
+    where: { clerkUserId: session.userId },
+    include: {
+      profile: true,
+      subscription: true,
+      customers: true,
+    },
+  });
+
+  let clerkUser = null;
+  let email = extractPrimaryEmail(session.sessionClaims) ?? existingUser?.email ?? null;
+  let displayName = existingUser?.profile?.displayName ?? "Writer";
+
+  if (!existingUser || !email) {
+    try {
+      clerkUser = await currentUser();
+      email = clerkUser?.primaryEmailAddress?.emailAddress ?? email;
+      displayName =
+        [clerkUser?.firstName, clerkUser?.lastName].filter(Boolean).join(" ") ||
+        clerkUser?.username ||
+        displayName;
+    } catch {
+      // Fall back to the local user record when Clerk's user profile fetch is temporarily unavailable.
+    }
   }
 
-  assertDatabaseConfigured();
+  if (existingUser && (!email || existingUser.email === email)) {
+    return {
+      session,
+      clerkUser,
+      user: existingUser,
+    };
+  }
+
+  if (!email) {
+    throw new Error("Signed-in user is missing a primary email address.");
+  }
 
   const user = await prisma.user.upsert({
     where: { clerkUserId: session.userId },
     update: {
-      email: clerkUser.primaryEmailAddress.emailAddress,
+      email,
     },
     create: {
       clerkUserId: session.userId,
-      email: clerkUser.primaryEmailAddress.emailAddress,
+      email,
       profile: {
         create: {
-          displayName: [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ") || clerkUser.username || "Writer",
+          displayName,
         },
       },
     },
