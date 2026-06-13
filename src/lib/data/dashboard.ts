@@ -121,6 +121,14 @@ export async function getRewriteForEditor(userId: string, rewriteId?: string | n
     return null;
   }
 
+  if (!rewrite.document) {
+    console.error("[dashboard:getRewriteForEditor] Rewrite is missing its document relation", {
+      rewriteId,
+      userId,
+    });
+    return null;
+  }
+
   if (entitlements.historyWindow === "full") {
     return rewrite;
   }

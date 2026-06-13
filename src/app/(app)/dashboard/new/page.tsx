@@ -43,16 +43,16 @@ export default async function NewRewritePage({
           allowedIntensities={entitlements.intensities}
           defaults={{
             documentId: seed?.documentId,
-            title: seed?.document.title,
-            sourceText: seed?.document.sourceText ?? "",
-            preset: seed?.document.writingPreset ?? profile?.defaultPreset ?? "EMAIL",
+            title: seed?.document?.title,
+            sourceText: seed?.document?.sourceText ?? "",
+            preset: seed?.document?.writingPreset ?? profile?.defaultPreset ?? "EMAIL",
             tone: seed?.tone ?? profile?.defaultTone ?? "NATURAL",
             intensity: seed?.intensity ?? profile?.defaultIntensity ?? "MODERATE",
             customInstructions: profile?.customInstructions ?? "",
             rewrittenText: seed?.rewrittenText,
             changeSummary: seed?.changeSummary ?? undefined,
             saveStatus: seed ? "Loaded from history" : undefined,
-            compareSource: seed?.document.sourceText ?? "",
+            compareSource: seed?.document?.sourceText ?? "",
           }}
         />
       )}

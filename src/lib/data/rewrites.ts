@@ -192,59 +192,72 @@ export async function executeRewrite(input: {
     (existingDocument?.sourceType === "DOCUMENT_UPLOAD" ? existingDocument.title : null) ??
     titleFromText(input.payload.sourceText, "Untitled rewrite");
 
-  const document = input.existingDocumentId
-    ? await prisma.document.update({
-        where: { id: input.existingDocumentId },
-        data: {
-          sourceText: input.payload.sourceText,
-          title: nextTitle,
-          writingPreset: input.payload.preset,
-          sourceType: input.sourceType === "DOCUMENT_UPLOAD" ? input.sourceType : undefined,
-        },
-      })
-    : await prisma.document.create({
-        data: {
-          userId: input.userId,
-          title: nextTitle,
-          sourceText: input.payload.sourceText,
-          writingPreset: input.payload.preset,
-          sourceType: input.sourceType,
-        },
-      });
+  try {
+    const document = input.existingDocumentId
+      ? await prisma.document.update({
+          where: { id: input.existingDocumentId },
+          data: {
+            sourceText: input.payload.sourceText,
+            title: nextTitle,
+            writingPreset: input.payload.preset,
+            sourceType: input.sourceType === "DOCUMENT_UPLOAD" ? input.sourceType : undefined,
+          },
+        })
+      : await prisma.document.create({
+          data: {
+            userId: input.userId,
+            title: nextTitle,
+            sourceText: input.payload.sourceText,
+            writingPreset: input.payload.preset,
+            sourceType: input.sourceType,
+          },
+        });
 
-  const rewrite = await prisma.rewrite.create({
-    data: {
+    const rewrite = await prisma.rewrite.create({
+      data: {
+        documentId: document.id,
+        userId: input.userId,
+        tone: input.payload.tone,
+        intensity: input.payload.intensity,
+        instructionsSnapshot: customInstructions,
+        rewrittenText: result.rewrittenText,
+        changeSummary: result.changeSummary,
+        modelName: result.modelName,
+        tokensUsed: result.tokensUsed,
+        latencyMs: result.latencyMs,
+      },
+    });
+
+    await prisma.usageEvent.create({
+      data: {
+        userId: input.userId,
+        eventType: input.existingDocumentId ? "REWRITE_REGENERATED" : "REWRITE_CREATED",
+        inputWords: sourceWordCount,
+        outputWords: countWords(result.rewrittenText),
+        planAtTime: input.planCode,
+      },
+    });
+
+    return {
+      ok: true,
+      rewriteId: rewrite.id,
       documentId: document.id,
-      userId: input.userId,
-      tone: input.payload.tone,
-      intensity: input.payload.intensity,
-      instructionsSnapshot: customInstructions,
       rewrittenText: result.rewrittenText,
       changeSummary: result.changeSummary,
       modelName: result.modelName,
-      tokensUsed: result.tokensUsed,
-      latencyMs: result.latencyMs,
-    },
-  });
-
-  await prisma.usageEvent.create({
-    data: {
+      saveStatus: "Saved to history",
+      metadata: result.metadata,
+    };
+  } catch (error) {
+    console.error("[rewrite:executeRewrite] Failed to persist rewrite result", {
       userId: input.userId,
-      eventType: input.existingDocumentId ? "REWRITE_REGENERATED" : "REWRITE_CREATED",
-      inputWords: sourceWordCount,
-      outputWords: countWords(result.rewrittenText),
-      planAtTime: input.planCode,
-    },
-  });
-
-  return {
-    ok: true,
-    rewriteId: rewrite.id,
-    documentId: document.id,
-    rewrittenText: result.rewrittenText,
-    changeSummary: result.changeSummary,
-    modelName: result.modelName,
-    saveStatus: "Saved to history",
-    metadata: result.metadata,
-  };
+      existingDocumentId: input.existingDocumentId,
+      sourceType: input.sourceType,
+      error,
+    });
+    return {
+      ok: false,
+      error: "We finished the rewrite but couldn't save it to your history. Please try again.",
+    };
+  }
 }
